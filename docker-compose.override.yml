@@ -1,0 +1,12 @@
+version: "3.9"
+
+services:
+  api:
+    env_file:
+      - .env.development
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=appointment_system_dev;Username=appointment;Password=appointment_dev_password
+      ConnectionStrings__Redis: redis:6379
+    volumes:
+      - ./:/src

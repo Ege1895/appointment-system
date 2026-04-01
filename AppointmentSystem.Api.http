@@ -1,0 +1,232 @@
+### 1. Register a new Business
+POST http://localhost:5299/api/v1/business/register
+Content-Type: application/json
+
+{
+  "companyName": "Demo Appointment Business",
+  "subdomain": "demo_test",
+  "ownerFirstName": "Ahmet",
+  "ownerLastName": "Yılmaz",
+  "email": "ahmet@demo-appointment.com",
+  "password": "Password123*",
+  "contactPhone": "05551234567"
+}
+
+###
+
+### 2. Login as Business (to get JWT Token)
+POST http://localhost:5299/api/v1/business/login
+Content-Type: application/json
+
+{
+  "email": "ahmet@demo-appointment.com",
+  "password": "Password123*"
+}
+
+> {%
+    // Rider için token'ı ve businessId'yi yakala
+    client.global.set("authToken", response.body.data.token);
+    client.global.set("businessId", response.body.data.business.id);
+%}
+
+###
+
+### 3. Create a Single Employee
+POST http://localhost:5299/api/v1/employees
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6Ijc5NmZkY2M5LWMwYTUtNDgzOS05ZmQ0LWQ3NjI4MTcwYjFiNyIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6ImFobWV0X3llbmlAdGVjaGtpZHMuY29tIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiQnVzaW5lc3MiLCJleHAiOjE3NzQ0NzIyNjR9.hp-B7ZAqM4oPS-BojwVLnfoOqdG0t1DsNSc4S41iJZg
+
+{
+  "firstName": "Mehmet",
+  "lastName": "Demir",
+  "jobTitle": "Eğitmen",
+  "jobDescription": "Robotik ve Kodlama Eğitmeni"
+}
+
+###
+
+### 4. Bulk Create Employees
+POST http://localhost:5299/api/v1/employees/bulk
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6Ijk2NzFhODIwLWYwMGQtNDYyZi05ODIxLTNmZWMzZjAzYjA5MCIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6ImFobWV0X3llcGVuaUB0ZWNoa2lkcy5jb20iLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJCdXNpbmVzcyIsImV4cCI6MTc3NDQ3NzM1N30.6EfOAhn8BwV7qx9VQfcG2eiKq-nApPlvWTikMocNlro
+[
+  {
+    "firstName": "Ayşe",
+    "lastName": "Kaya",
+    "jobTitle": "Satış Yöneticisi",
+    "jobDescription": "Veli iletişimi ve satış"
+  },
+  {
+    "firstName": "Ali",
+    "lastName": "Can",
+    "jobTitle": "Muhasebe",
+    "jobDescription": "Finans işlemleri"
+  }
+]
+
+###
+
+### 5. Get All Employees with Pagination
+GET http://localhost:5299/api/v1/employees?page=1&pageSize=10
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6Ijc5NmZkY2M5LWMwYTUtNDgzOS05ZmQ0LWQ3NjI4MTcwYjFiNyIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IkJ1c2luZXNzIiwiZXhwIjoxNzc0NDcyMzc2fQ.aZl44kWMZaHC6-px-ZKvgSo1n83BJm6Upf5yc7o5tyQ
+
+###
+
+### 6. Register a new User (Customer) for the Business
+POST http://localhost:5299/api/v1/user/register
+Content-Type: application/json
+
+{
+  "firstName": "Veli",
+  "lastName": "Müşteri",
+  "email": "veli@example.com",
+  "password": "Password123*",
+  "phoneNumber": "05559998877"
+}
+
+###
+
+### 7. Login as User (Customer)
+POST http://localhost:5299/api/v1/user/login
+Content-Type: application/json
+
+{
+  "email": "veli@example.com",
+  "password": "Password123*"
+}
+
+> {%
+    client.global.set("userAuthToken", response.body.data.token);
+%}
+
+###
+
+### 8. Create a Service (Workshop / Class) - Business Auth Required
+POST http://localhost:5299/api/v1/services
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6Ijk2NzFhODIwLWYwMGQtNDYyZi05ODIxLTNmZWMzZjAzYjA5MCIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6ImFobWV0X3llcGVuaUB0ZWNoa2lkcy5jb20iLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJCdXNpbmVzcyIsImV4cCI6MTc3NDQ3NTA2Mn0.OibHul1Jmmv1_s3wEusB7Snry3twPfHVFInNi78uvMk
+
+{
+  "name": "Psikoloji İlk Görüşme (Online)",
+  "description": "Tanışma ve değerlendirme seansı",
+  "durationInMinutes": 30,
+  "priceType": 4, 
+  "price": null,
+  "isOnline": true
+}
+
+###
+
+### 9. Get All Services for Logged-in Business
+GET http://localhost:5299/api/v1/services
+Authorization: Bearer {{authToken}}
+
+###
+
+### 10. Set Working Hours for an Employee
+# Not: Yukarıdaki "5. Get All Employees" isteğini çalıştırıp, aldığınız bir "id" değerini aşağıdaki URL'ye yapıştırın.
+POST http://localhost:5299/api/v1/employees/BURAYA_EMPLOYEE_ID_GELECEK/working-hours
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+[
+  {
+    "dayOfWeek": 1,
+    "isDayOff": false,
+    "startTime": "09:00:00",
+    "endTime": "18:00:00",
+    "breakStartTime": "12:00:00",
+    "breakEndTime": "13:00:00"
+  },
+  {
+    "dayOfWeek": 2,
+    "isDayOff": false,
+    "startTime": "09:00:00",
+    "endTime": "18:00:00",
+    "breakStartTime": null,
+    "breakEndTime": null
+  },
+  {
+    "dayOfWeek": 0,
+    "isDayOff": true,
+    "startTime": "00:00:00",
+    "endTime": "00:00:00",
+    "breakStartTime": null,
+    "breakEndTime": null
+  }
+]
+
+###
+
+### 11. Get Working Hours of an Employee
+GET http://localhost:5299/api/v1/employees/BURAYA_EMPLOYEE_ID_GELECEK/working-hours
+Authorization: Bearer {{authToken}}
+
+###
+
+### 12. Create an Appointment as a User (Customer)
+# Not: Yukarıdaki 5'ten EmployeeId ve 9'dan ServiceId alarak yapıştırınız. İşlem User (Müşteri) olarak yapılır.
+POST http://localhost:5299/api/v1/appointments
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjNlZmEyOTFhLTlmMGItNGNjMS04MTllLTFmYWUyMTBiYTY4OCIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6InZlbGlAZXhhbXBsZS5jb20iLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJVc2VyIiwiZXhwIjoxNzc0NDc3NDUxfQ._aZnjwqE4lAQ3dzQ5mXQnujCDG3woqRYaKf0TacnMBo
+
+{
+  "businessId": "9671a820-f00d-462f-9821-3fec3f03b090",
+  "employeeId": "BURAYA_EMPLOYEE_ID_GELECEK",
+  "serviceId": "BURAYA_SERVICE_ID_GELECEK",
+  "startTimeUtc": "2026-03-30T10:00:00Z"
+}
+
+###
+
+### 13. Get My Appointments (As User)
+GET http://localhost:5299/api/v1/appointments/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjNlZmEyOTFhLTlmMGItNGNjMS04MTllLTFmYWUyMTBiYTY4OCIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6InZlbGlAZXhhbXBsZS5jb20iLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJVc2VyIiwiZXhwIjoxNzc0NDc3NDUxfQ._aZnjwqE4lAQ3dzQ5mXQnujCDG3woqRYaKf0TacnMBo
+
+###
+
+### 14. Get Business Appointments (As Business)
+GET http://localhost:5299/api/v1/appointments/business
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6Ijk2NzFhODIwLWYwMGQtNDYyZi05ODIxLTNmZWMzZjAzYjA5MCIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6ImFobWV0X3llcGVuaUB0ZWNoa2lkcy5jb20iLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJCdXNpbmVzcyIsImV4cCI6MTc3NDQ3NzM1N30.6EfOAhn8BwV7qx9VQfcG2eiKq-nApPlvWTikMocNlro
+
+###
+
+### 15. Cancel Appointment
+DELETE http://localhost:5299/api/v1/appointments/BURAYA_APPOINTMENT_ID_GELECEK
+Authorization: Bearer {{userAuthToken}}
+
+###
+
+### 16. Refresh Business Token
+# Not: Login adımından dönen 'refreshToken' değerini yapıştırın.
+POST http://localhost:5299/api/v1/business/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "BURAYA_REFRESH_TOKEN_GELECEK"
+}
+
+###
+
+### 17. Logout Business
+POST http://localhost:5299/api/v1/business/logout
+Authorization: Bearer {{authToken}}
+
+###
+
+### 18. Refresh User Token
+# Not: Login adımından dönen 'refreshToken' değerini yapıştırın.
+POST http://localhost:5299/api/v1/user/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "BURAYA_REFRESH_TOKEN_GELECEK"
+}
+
+###
+
+### 19. Logout User
+POST http://localhost:5299/api/v1/user/logout
+Authorization: Bearer {{userAuthToken}}
+
+###
