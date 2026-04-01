@@ -1,0 +1,36 @@
+## [Visual Studio]
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## [Visual Studio Code]
+.vscode/
+.history/
+.ionide/
+
+## [Rider / JetBrains]
+.idea/
+*.DotSettings.user
+
+## [User / System]
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## [Environment / Secrets]
+.env
+.env.development
+.env.test
+.env.production
+.env.local
+token.json
+customer_token.json
+
+## [Logs / DB]
+*.log
+*.db
+build_errors.txt

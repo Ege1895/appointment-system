@@ -1,0 +1,11 @@
+bin/
+obj/
+.git/
+.idea/
+.cursor/
+*.user
+*.suo
+*.db
+*.log
+docker-compose*.yml
+.env*

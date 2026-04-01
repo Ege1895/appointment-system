@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r \"KidsWorkshop\\\\|kidsworkshop\" /Users/local/Workspace/AppointmentSystem.Api --include=*.cs --include=*.csproj --include=*.sln --include=*.json --include=*.yml --include=*.yaml --include=*.http --include=*.xml --include=*.config --exclude-dir=obj --exclude-dir=bin -l)",
+      "Bash(dotnet build:*)",
+      "Bash(brew --version)",
+      "Bash(brew install:*)",
+      "Bash(psql -U local -l)",
+      "Bash(psql -l)",
+      "Bash(psql:*)"
+    ]
+  }
+}
