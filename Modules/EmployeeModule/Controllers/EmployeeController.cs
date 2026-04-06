@@ -62,5 +62,27 @@ namespace AppointmentSystem.Api.Modules.EmployeeModule.Controllers
             IEnumerable<EmployeeResponseDto> employees = await _employeeService.GetByBranchAsync(branchId);
             return Ok(ApiResponse<IEnumerable<EmployeeResponseDto>>.SuccessResponse(employees));
         }
+
+        [HttpPut("{id:guid}/offerings")]
+        public async Task<IActionResult> SetOfferings(Guid id, [FromBody] AssignOfferingsRequest request)
+        {
+            await _employeeService.SetOfferingsAsync(id, request.OfferingIds);
+            return Ok(ApiResponse<object>.SuccessResponse(null!));
+        }
+
+        [HttpGet("{id:guid}/offerings")]
+        public async Task<IActionResult> GetOfferings(Guid id)
+        {
+            List<EmployeeOfferingResponseDto> response = await _employeeService.GetOfferingsAsync(id);
+            return Ok(ApiResponse<List<EmployeeOfferingResponseDto>>.SuccessResponse(response));
+        }
+
+        [HttpGet("/api/v1/businesses/{businessId:guid}/offerings/{offeringId:guid}/employees")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPublicEmployeesByOffering(Guid businessId, Guid offeringId)
+        {
+            IEnumerable<EmployeeResponseDto> response = await _employeeService.GetByOfferingAsync(businessId, offeringId);
+            return Ok(ApiResponse<IEnumerable<EmployeeResponseDto>>.SuccessResponse(response));
+        }
     }
 }

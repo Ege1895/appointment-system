@@ -78,6 +78,19 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
                 }
             }
 
+            // Employee-Offering validation
+            bool hasAnyOffering = await _context.EmployeeOfferings.AnyAsync(eo => eo.EmployeeId == request.EmployeeId);
+            if (hasAnyOffering)
+            {
+                bool isAssigned = await _context.EmployeeOfferings
+                    .AnyAsync(eo => eo.EmployeeId == request.EmployeeId && eo.OfferingId == request.OfferingId);
+
+                if (!isAssigned)
+                {
+                    throw new BusinessException(ErrorMessages.EMPLOYEE_NOT_ASSIGNED_TO_OFFERING);
+                }
+            }
+
             DateTime endTimeUtc = request.StartTimeUtc.AddMinutes(offering.DurationInMinutes);
 
             using IDbContextTransaction transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);

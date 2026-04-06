@@ -21,5 +21,9 @@ namespace AppointmentSystem.Api.Modules.EmployeeModule.Services
         /// Belirli bir şubeye atanmış çalışanları listeler.
         /// </summary>
         Task<IEnumerable<EmployeeResponseDto>> GetByBranchAsync(Guid branchId);
+
+        Task SetOfferingsAsync(Guid employeeId, List<Guid> offeringIds);
+        Task<List<EmployeeOfferingResponseDto>> GetOfferingsAsync(Guid employeeId);
+        Task<IEnumerable<EmployeeResponseDto>> GetByOfferingAsync(Guid businessId, Guid offeringId);
     }
 }

@@ -412,6 +412,55 @@ namespace AppointmentSystem.Api.Migrations
                     b.ToTable("Employees");
                 });
 
+            modelBuilder.Entity("AppointmentSystem.Api.Modules.EmployeeModule.Models.EmployeeOffering", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BusinessId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("OfferingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RowVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BusinessId");
+
+                    b.HasIndex("OfferingId");
+
+                    b.HasIndex("EmployeeId", "OfferingId")
+                        .IsUnique();
+
+                    b.ToTable("EmployeeOfferings", (string)null);
+                });
+
             modelBuilder.Entity("AppointmentSystem.Api.Modules.FeedbackModule.Models.Feedback", b =>
                 {
                     b.Property<Guid>("Id")
@@ -771,6 +820,25 @@ namespace AppointmentSystem.Api.Migrations
                     b.Navigation("Business");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("AppointmentSystem.Api.Modules.EmployeeModule.Models.EmployeeOffering", b =>
+                {
+                    b.HasOne("AppointmentSystem.Api.Modules.EmployeeModule.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AppointmentSystem.Api.Modules.OfferingModule.Models.Offering", "Offering")
+                        .WithMany()
+                        .HasForeignKey("OfferingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Offering");
                 });
 
             modelBuilder.Entity("AppointmentSystem.Api.Modules.FeedbackModule.Models.Feedback", b =>

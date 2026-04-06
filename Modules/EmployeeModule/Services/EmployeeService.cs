@@ -7,6 +7,7 @@ using AppointmentSystem.Api.Shared.Constants;
 using AppointmentSystem.Api.Shared.Database;
 using AppointmentSystem.Api.Shared.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace AppointmentSystem.Api.Modules.EmployeeModule.Services
 {
@@ -225,6 +226,120 @@ namespace AppointmentSystem.Api.Modules.EmployeeModule.Services
                 .ToListAsync();
 
             return employees.Select(MapToResponse).ToList();
+        }
+
+        public async Task SetOfferingsAsync(Guid employeeId, List<Guid> offeringIds)
+        {
+            Guid businessId = GetBusinessId();
+
+            // Employee belongs to business
+            Employee? employee = await _context.Employees
+                .FirstOrDefaultAsync(e => e.Id == employeeId && e.BusinessId == businessId);
+
+            if (employee == null)
+            {
+                throw new NotFoundException(ErrorMessages.EMPLOYEE_NOT_FOUND);
+            }
+
+            // All offerings belong to business
+            if (offeringIds.Any())
+            {
+                int validOfferingsCount = await _context.Offerings
+                    .CountAsync(o => offeringIds.Contains(o.Id) && o.BusinessId == businessId);
+
+                if (validOfferingsCount != offeringIds.Count)
+                {
+                    throw new NotFoundException(ErrorMessages.OFFERING_NOT_FOUND);
+                }
+            }
+
+            using IDbContextTransaction transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Delete existing assignments (not soft-delete for junction table usually, but we use BaseEntity)
+                // We'll do a hard delete for junction if preferred, but plan said SetProperty is enough.
+                // Actually, for junction tables in this architecture, we might want to just delete them.
+                var existing = await _context.EmployeeOfferings
+                    .Where(eo => eo.EmployeeId == employeeId)
+                    .ToListAsync();
+                
+                _context.EmployeeOfferings.RemoveRange(existing);
+
+                // Insert new assignments
+                var newAssignments = offeringIds.Select(offeringId => new EmployeeOffering
+                {
+                    Id = Guid.NewGuid(),
+                    BusinessId = businessId,
+                    EmployeeId = employeeId,
+                    OfferingId = offeringId,
+                    CreatedAt = DateTime.UtcNow
+                }).ToList();
+
+                await _context.EmployeeOfferings.AddRangeAsync(newAssignments);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        public async Task<List<EmployeeOfferingResponseDto>> GetOfferingsAsync(Guid employeeId)
+        {
+            Guid businessId = GetBusinessId();
+
+            return await _context.EmployeeOfferings
+                .AsNoTracking()
+                .Include(eo => eo.Offering)
+                .Where(eo => eo.EmployeeId == employeeId && eo.BusinessId == businessId)
+                .Select(eo => new EmployeeOfferingResponseDto
+                {
+                    EmployeeId = eo.EmployeeId,
+                    OfferingId = eo.OfferingId,
+                    OfferingName = eo.Offering.Name,
+                    DurationInMinutes = eo.Offering.DurationInMinutes
+                })
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<EmployeeResponseDto>> GetByOfferingAsync(Guid businessId, Guid offeringId)
+        {
+            // Offering check (Public access, so we pass businessId)
+            bool offeringExists = await _context.Offerings.AnyAsync(o => o.Id == offeringId && o.BusinessId == businessId);
+            if (!offeringExists)
+            {
+                throw new NotFoundException(ErrorMessages.OFFERING_NOT_FOUND);
+            }
+
+            // Find employees assigned to this offering
+            var assignedEmployeeIds = await _context.EmployeeOfferings
+                .Where(eo => eo.OfferingId == offeringId && eo.BusinessId == businessId)
+                .Select(eo => eo.EmployeeId)
+                .ToListAsync();
+
+            // If no one is assigned, logic says "everyone can do it" (backward compat)
+            if (!assignedEmployeeIds.Any())
+            {
+                return await _context.Employees
+                    .Include(e => e.User)
+                    .Include(e => e.Branch)
+                    .AsNoTracking()
+                    .Where(e => e.BusinessId == businessId)
+                    .OrderBy(e => e.FirstName)
+                    .Select(e => MapToResponse(e))
+                    .ToListAsync();
+            }
+
+            return await _context.Employees
+                .Include(e => e.User)
+                .Include(e => e.Branch)
+                .AsNoTracking()
+                .Where(e => assignedEmployeeIds.Contains(e.Id))
+                .OrderBy(e => e.FirstName)
+                .Select(e => MapToResponse(e))
+                .ToListAsync();
         }
 
         private EmployeeResponseDto MapToResponse(Employee employee)
