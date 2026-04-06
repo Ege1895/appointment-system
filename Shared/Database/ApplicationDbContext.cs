@@ -5,6 +5,7 @@ using AppointmentSystem.Api.Modules.OfferingModule.Models;
 using AppointmentSystem.Api.Modules.WorkingHourModule.Models;
 using AppointmentSystem.Api.Modules.AppointmentModule.Models;
 using AppointmentSystem.Api.Modules.FeedbackModule.Models;
+using AppointmentSystem.Api.Modules.BranchModule.Models;
 using Microsoft.EntityFrameworkCore;
 
 using AppointmentSystem.Api.Shared.Authentication;
@@ -30,6 +31,7 @@ namespace AppointmentSystem.Api.Shared.Database
         public DbSet<EmployeeWorkingHour> EmployeeWorkingHours { get; set; }
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<Feedback> Feedbacks { get; set; }
+        public DbSet<Branch> Branches { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -53,6 +55,9 @@ namespace AppointmentSystem.Api.Shared.Database
                 
             modelBuilder.Entity<Appointment>().HasQueryFilter(a => !a.IsDeleted && 
                 (!_currentUserService.TenantId.HasValue || a.BusinessId == _currentUserService.TenantId.Value));
+
+            modelBuilder.Entity<Branch>().HasQueryFilter(b => !b.IsDeleted && 
+                (!_currentUserService.TenantId.HasValue || b.BusinessId == _currentUserService.TenantId.Value));
         }
     }
 }

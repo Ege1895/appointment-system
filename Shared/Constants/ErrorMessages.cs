@@ -38,4 +38,9 @@ public class ErrorMessages
     
     // Role Errors
     public const string INVALID_ROLE_ASSIGNMENT = "Seçilen rol, hesap türünüz ile uyumlu değil. Lütfen kontrol ediniz.";
+
+    // Branch Module Errors
+    public const string BRANCH_NOT_FOUND = "Şube bulunamadı.";
+    public const string MAIN_BRANCH_DELETE_ERROR = "Ana şube silinemez. Lütfen önce başka bir şubeyi ana şube olarak işaretleyin.";
+    public const string BRANCH_LIMIT_EXCEEDED = "Şube oluşturma limitine ulaşıldı. Maksimum şube sayısı:";
 }

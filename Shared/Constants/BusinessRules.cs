@@ -60,5 +60,10 @@ namespace AppointmentSystem.Api.Shared.Constants
         // Password
         public const int MIN_PASSWORD_LENGTH = 8;
         public const int MAX_PASSWORD_LENGTH = 100;
+
+        // Branch Module
+        public const int MAX_BRANCHES_DEFAULT = 3;
+        public const int MAX_BRANCH_NAME_LENGTH = 150;
+        public const int MAX_BRANCH_ADDRESS_LENGTH = 300;
     }
 }

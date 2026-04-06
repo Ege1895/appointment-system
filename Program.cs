@@ -9,6 +9,7 @@ using AppointmentSystem.Api.Modules.AppointmentModule.Services;
 using AppointmentSystem.Api.Modules.FeedbackModule.Services;
 using AppointmentSystem.Api.Modules.CatalogModule.Services;
 using AppointmentSystem.Api.Modules.HomeModule.Services;
+using AppointmentSystem.Api.Modules.BranchModule.Services;
 using AppointmentSystem.Api.Modules.Auth.Services;
 using AppointmentSystem.Api.Shared.Middleware;
 using FluentValidation;
@@ -132,6 +133,7 @@ builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
 builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 builder.Services.AddScoped<ICatalogService, CatalogService>();
 builder.Services.AddScoped<IHomeService, HomeService>();
+builder.Services.AddScoped<IBranchService, BranchService>();
 builder.Services.AddScoped<AuditableEntitySaveChangesInterceptor>();
 
 builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
