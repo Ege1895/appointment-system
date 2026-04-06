@@ -44,7 +44,7 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Controllers
             return Ok(ApiResponse<BusinessAuthResponseDto>.SuccessResponse(response));
         }
 
-        [Authorize(Roles = Roles.Business)]
+        [Authorize(Roles = nameof(Roles.Business))]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {

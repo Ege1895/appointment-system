@@ -50,6 +50,12 @@ namespace AppointmentSystem.Api.Modules.EmployeeModule.Services
                 throw new BusinessException($"{ErrorMessages.CAPACITY_LIMIT_EXCEEDED} {business.EmployeeCapacity}");
             }
 
+            bool isBusinessEmail = await _context.Businesses.AnyAsync(b => b.Email == request.Email);
+            if (isBusinessEmail)
+            {
+                throw new BusinessException(ErrorMessages.INVALID_ROLE_ASSIGNMENT);
+            }
+
             User? user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
             if (user == null)
             {
@@ -105,6 +111,17 @@ namespace AppointmentSystem.Api.Modules.EmployeeModule.Services
 
             // Batch-load all matching users in a single query to avoid N+1
             List<string> requestedEmails = requestList.Select(r => r.Email).ToList();
+            
+            List<string> businessEmails = await _context.Businesses
+                .Where(b => requestedEmails.Contains(b.Email))
+                .Select(b => b.Email)
+                .ToListAsync();
+
+            if (businessEmails.Any())
+            {
+                throw new BusinessException(ErrorMessages.INVALID_ROLE_ASSIGNMENT);
+            }
+
             Dictionary<string, User> userByEmail = await _context.Users
                 .Where(u => requestedEmails.Contains(u.Email))
                 .ToDictionaryAsync(u => u.Email, StringComparer.OrdinalIgnoreCase);

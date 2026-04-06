@@ -10,7 +10,7 @@ namespace AppointmentSystem.Api.Modules.OfferingModule.Controllers
 {
     [ApiController]
     [Route("api/v1/offerings")]
-    [Authorize(Roles = Roles.Business)]
+    [Authorize(Roles = nameof(Roles.Business))]
     public class OfferingController : ControllerBase
     {
         private readonly IOfferingService _serviceService;

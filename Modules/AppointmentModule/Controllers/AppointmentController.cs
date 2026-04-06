@@ -20,7 +20,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = Roles.User)]
+        [Authorize(Roles = nameof(Roles.User))]
         public async Task<IActionResult> Create([FromBody] CreateAppointmentRequest request)
         {
             AppointmentResponseDto response = await _appointmentService.CreateAsync(request);
@@ -28,7 +28,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Controllers
         }
 
         [HttpGet("me")]
-        [Authorize(Roles = Roles.User)]
+        [Authorize(Roles = nameof(Roles.User))]
         public async Task<IActionResult> GetMyAppointments()
         {
             List<AppointmentResponseDto> response = await _appointmentService.GetMyAsync();
@@ -36,7 +36,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Controllers
         }
 
         [HttpGet("me/upcoming")]
-        [Authorize(Roles = Roles.User)]
+        [Authorize(Roles = nameof(Roles.User))]
         public async Task<IActionResult> GetMyUpcomingAppointments([FromQuery] int limit = 5)
         {
             List<AppointmentResponseDto> response = await _appointmentService.GetMyUpcomingAsync(limit);
@@ -44,7 +44,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Controllers
         }
 
         [HttpGet("business")]
-        [Authorize(Roles = Roles.Business)]
+        [Authorize(Roles = nameof(Roles.Business))]
         public async Task<IActionResult> GetBusinessAppointments([FromQuery] DateTime? date)
         {
             List<AppointmentResponseDto> response = await _appointmentService.GetBusinessAppointmentsAsync(date);
@@ -53,7 +53,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Controllers
 
         // Cancel: both Business owner and the booking customer may cancel
         [HttpDelete("{id}")]
-        [Authorize(Roles = $"{Roles.Business},{Roles.User}")]
+        [Authorize(Roles = nameof(Roles.Business) + "," + nameof(Roles.User))]
         public async Task<IActionResult> CancelAppointment(Guid id)
         {
             await _appointmentService.CancelAsync(id);
@@ -62,7 +62,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Controllers
 
         // Accept/Decline/Transfer: Business owner or assigned employee (User-role with employee link)
         [HttpPost("{id}/accept")]
-        [Authorize(Roles = $"{Roles.Business},{Roles.User}")]
+        [Authorize(Roles = nameof(Roles.Business) + "," + nameof(Roles.User))]
         public async Task<IActionResult> Accept(Guid id)
         {
             await _appointmentService.AcceptAsync(id);
@@ -70,7 +70,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Controllers
         }
 
         [HttpPost("{id}/decline")]
-        [Authorize(Roles = $"{Roles.Business},{Roles.User}")]
+        [Authorize(Roles = nameof(Roles.Business) + "," + nameof(Roles.User))]
         public async Task<IActionResult> Decline(Guid id)
         {
             await _appointmentService.DeclineAsync(id);
@@ -78,7 +78,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Controllers
         }
 
         [HttpPost("{id}/transfer")]
-        [Authorize(Roles = $"{Roles.Business},{Roles.User}")]
+        [Authorize(Roles = nameof(Roles.Business) + "," + nameof(Roles.User))]
         public async Task<IActionResult> Transfer(Guid id, [FromBody] Guid newEmployeeId)
         {
             await _appointmentService.TransferAsync(id, newEmployeeId);
@@ -87,7 +87,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Controllers
 
         // RespondToTransfer: the receiving employee (User role) or Business owner responds
         [HttpPost("{id}/transfer/respond")]
-        [Authorize(Roles = $"{Roles.Business},{Roles.User}")]
+        [Authorize(Roles = nameof(Roles.Business) + "," + nameof(Roles.User))]
         public async Task<IActionResult> RespondToTransfer(Guid id, [FromQuery] bool isAccepted)
         {
             await _appointmentService.RespondToTransferAsync(id, isAccepted);
@@ -96,7 +96,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Controllers
 
         // RequestReschedule: both Business owner and customer may propose
         [HttpPost("{id}/reschedule")]
-        [Authorize(Roles = $"{Roles.Business},{Roles.User}")]
+        [Authorize(Roles = nameof(Roles.Business) + "," + nameof(Roles.User))]
         public async Task<IActionResult> RequestReschedule(Guid id, [FromBody] DateTime newStartTimeUtc)
         {
             await _appointmentService.RequestRescheduleAsync(id, newStartTimeUtc);
@@ -105,7 +105,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Controllers
 
         // RespondToReschedule: the other party (Business owner or assigned employee) responds
         [HttpPost("{id}/reschedule/respond")]
-        [Authorize(Roles = $"{Roles.Business},{Roles.User}")]
+        [Authorize(Roles = nameof(Roles.Business) + "," + nameof(Roles.User))]
         public async Task<IActionResult> RespondToReschedule(Guid id, [FromQuery] bool isAccepted)
         {
             await _appointmentService.RespondToRescheduleAsync(id, isAccepted);

@@ -9,6 +9,7 @@ using AppointmentSystem.Api.Modules.AppointmentModule.Services;
 using AppointmentSystem.Api.Modules.FeedbackModule.Services;
 using AppointmentSystem.Api.Modules.CatalogModule.Services;
 using AppointmentSystem.Api.Modules.HomeModule.Services;
+using AppointmentSystem.Api.Modules.Auth.Services;
 using AppointmentSystem.Api.Shared.Middleware;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -122,6 +123,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 builder.Services.AddScoped<IBusinessAuthService, BusinessAuthService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IUserAuthService, UserAuthService>();
+builder.Services.AddScoped<IUnifiedAuthService, UnifiedAuthService>();
 builder.Services.AddScoped<IBusinessService, BusinessService>();
 builder.Services.AddScoped<IOfferingService, OfferingService>();
 builder.Services.AddScoped<IWorkingHourService, WorkingHourService>();

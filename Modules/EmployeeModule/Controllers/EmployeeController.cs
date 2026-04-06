@@ -12,7 +12,7 @@ namespace AppointmentSystem.Api.Modules.EmployeeModule.Controllers
 {
     [ApiController]
     [Route("api/v1/employees")]
-    [Authorize(Roles = Roles.Business)]
+    [Authorize(Roles = nameof(Roles.Business))]
     public class EmployeeController : ControllerBase
     {
         private readonly IEmployeeService _employeeService;

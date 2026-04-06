@@ -22,7 +22,7 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
 
         private Guid GetBusinessId()
         {
-            if (_currentUserService.Role != Roles.Business || !_currentUserService.TenantId.HasValue)
+            if (_currentUserService.Role != Roles.Business.ToString() || !_currentUserService.TenantId.HasValue)
             {
                 throw new BusinessException(ErrorMessages.UNAUTHORIZED_ACCESS);
             }

@@ -31,4 +31,11 @@ public class ErrorMessages
 
     public const string FEEDBACK_TEXT_REQUIRED = "Feedback metni boş olamaz.";
     public const string FEEDBACK_INVALID_CATEGORY = "Geçersiz feedback kategorisi.";
+    
+    // KVKK & Privacy Errors
+    public const string KVKK_NOT_ACCEPTED = "KVKK metni onaylanmalıdır.";
+    public const string PRIVACY_POLICY_NOT_ACCEPTED = "Gizlilik politikası onaylanmalıdır.";
+    
+    // Role Errors
+    public const string INVALID_ROLE_ASSIGNMENT = "Bu hesap tipine bu rol atanamaz.";
 }

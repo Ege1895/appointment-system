@@ -19,7 +19,7 @@ namespace AppointmentSystem.Api.Modules.WorkingHourModule.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = $"{Roles.Business},{Roles.User}")]
+        [Authorize(Roles = nameof(Roles.Business) + "," + nameof(Roles.User))]
         public async Task<IActionResult> SetWorkingHours(Guid employeeId, [FromBody] List<WorkingHourDto> request)
         {
             await _workingHourService.SetWorkingHoursAsync(employeeId, request);
@@ -27,7 +27,7 @@ namespace AppointmentSystem.Api.Modules.WorkingHourModule.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = $"{Roles.Business},{Roles.User}")]
+        [Authorize(Roles = nameof(Roles.Business) + "," + nameof(Roles.User))]
         public async Task<IActionResult> GetWorkingHours(Guid employeeId)
         {
             List<WorkingHourDto> response = await _workingHourService.GetWorkingHoursAsync(employeeId);

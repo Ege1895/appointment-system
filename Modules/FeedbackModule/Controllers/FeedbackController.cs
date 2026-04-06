@@ -9,7 +9,7 @@ namespace AppointmentSystem.Api.Modules.FeedbackModule.Controllers
 {
     [ApiController]
     [Route("api/v1/feedback")]
-    [Authorize(Roles = $"{Roles.Business},{Roles.User}")]
+    [Authorize(Roles = nameof(Roles.Business) + "," + nameof(Roles.User))]
     public class FeedbackController : ControllerBase
     {
         private readonly IFeedbackService _feedbackService;

@@ -36,11 +36,23 @@ namespace AppointmentSystem.Api.Modules.UserModule.Services
             string normalizedEmail = request.Email.Trim().ToLowerInvariant();
             _logger.LogDebug("Starting user registration for email: {Email}", normalizedEmail);
 
-            bool emailExists = await _context.Users.AnyAsync(u => u.Email == normalizedEmail);
-            if (emailExists)
+            bool emailExistsAsUser = await _context.Users.AnyAsync(u => u.Email == normalizedEmail);
+            bool emailExistsAsBusiness = await _context.Businesses.AnyAsync(b => b.Email == normalizedEmail);
+            
+            if (emailExistsAsUser || emailExistsAsBusiness)
             {
                 _logger.LogWarning("User registration failed — email already exists. Email: {Email}", normalizedEmail);
                 throw new BusinessException(ErrorMessages.EMAIL_ALREADY_EXISTS);
+            }
+
+            if (!request.KvkkAccepted)
+            {
+                throw new BusinessException(ErrorMessages.KVKK_NOT_ACCEPTED);
+            }
+
+            if (!request.PrivacyPolicyAccepted)
+            {
+                throw new BusinessException(ErrorMessages.PRIVACY_POLICY_NOT_ACCEPTED);
             }
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -57,6 +69,11 @@ namespace AppointmentSystem.Api.Modules.UserModule.Services
                     Email = normalizedEmail,
                     PhoneNumber = request.PhoneNumber,
                     PasswordHash = PasswordHasher.Hash(request.Password),
+                    KvkkAccepted = request.KvkkAccepted,
+                    PrivacyPolicyAccepted = request.PrivacyPolicyAccepted,
+                    AcceptedAt = DateTime.UtcNow,
+                    KvkkVersion = ValidationConstants.LATEST_KVKK_VERSION,
+                    PrivacyVersion = ValidationConstants.LATEST_PRIVACY_POLICY_VERSION,
                     RefreshTokenHash = TokenGenerator.HashToken(refreshToken, _jwtSettings.SecretKey),
                     RefreshTokenExpiry = DateTime.UtcNow.AddDays(BusinessRules.REFRESH_TOKEN_EXPIRY_DAYS),
                     RefreshTokenUsed = false
@@ -67,7 +84,7 @@ namespace AppointmentSystem.Api.Modules.UserModule.Services
                 await _context.SaveChangesAsync();
 
                 _logger.LogDebug("Generating JWT token.");
-                string token = _jwtTokenGenerator.GenerateToken(user.Id, normalizedEmail, Roles.User);
+                string token = _jwtTokenGenerator.GenerateToken(user.Id, normalizedEmail, Roles.User.ToString());
 
                 await transaction.CommitAsync();
 
@@ -108,7 +125,7 @@ namespace AppointmentSystem.Api.Modules.UserModule.Services
                 throw new BusinessException(ErrorMessages.INVALID_EMAIL_OR_PASSWORD);
             }
 
-            string token = _jwtTokenGenerator.GenerateToken(user.Id, user.Email, Roles.User);
+            string token = _jwtTokenGenerator.GenerateToken(user.Id, user.Email, Roles.User.ToString());
             string refreshToken = TokenGenerator.GenerateRefreshToken();
 
             user.RefreshTokenHash = TokenGenerator.HashToken(refreshToken, _jwtSettings.SecretKey);
@@ -162,7 +179,7 @@ namespace AppointmentSystem.Api.Modules.UserModule.Services
                 throw new BusinessException(ErrorMessages.INVALID_REFRESH_TOKEN);
             }
 
-            string newAccessToken = _jwtTokenGenerator.GenerateToken(user.Id, user.Email, Roles.User);
+            string newAccessToken = _jwtTokenGenerator.GenerateToken(user.Id, user.Email, Roles.User.ToString());
             string newRefreshToken = TokenGenerator.GenerateRefreshToken();
 
             user.RefreshTokenHash = TokenGenerator.HashToken(newRefreshToken, _jwtSettings.SecretKey);

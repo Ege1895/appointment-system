@@ -32,7 +32,7 @@ namespace AppointmentSystem.Api.Modules.HomeModule.Services
 
             List<AppointmentResponseDto> upcoming = new List<AppointmentResponseDto>();
 
-            if (_currentUserService.Role == Roles.User
+            if (_currentUserService.Role == Roles.User.ToString()
                 && !string.IsNullOrEmpty(_currentUserService.UserId)
                 && Guid.TryParse(_currentUserService.UserId, out _))
             {

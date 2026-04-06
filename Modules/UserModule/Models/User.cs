@@ -13,5 +13,11 @@ namespace AppointmentSystem.Api.Modules.UserModule.Models
         public string? RefreshTokenHash { get; set; }
         public DateTime? RefreshTokenExpiry { get; set; }
         public bool RefreshTokenUsed { get; set; } = false;
+
+        public bool KvkkAccepted { get; set; }
+        public bool PrivacyPolicyAccepted { get; set; }
+        public DateTime? AcceptedAt { get; set; }
+        public string? KvkkVersion { get; set; }
+        public string? PrivacyVersion { get; set; }
     }
 }

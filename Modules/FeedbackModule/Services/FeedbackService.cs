@@ -44,14 +44,14 @@ namespace AppointmentSystem.Api.Modules.FeedbackModule.Services
             Guid? userId = null;
             string submittedByRole;
 
-            if (role == Roles.Business)
+            if (role == Roles.Business.ToString())
             {
-                submittedByRole = Roles.Business;
+                submittedByRole = Roles.Business.ToString();
                 businessId = accountId;
             }
-            else if (role == Roles.User)
+            else if (role == Roles.User.ToString())
             {
-                submittedByRole = Roles.User;
+                submittedByRole = Roles.User.ToString();
                 userId = accountId;
             }
             else

@@ -38,7 +38,7 @@ namespace AppointmentSystem.Api.Shared.Authentication
         {
             get
             {
-                if (Role == Roles.Business && Guid.TryParse(UserId, out Guid tenantId))
+                if (Role == Roles.Business.ToString() && Guid.TryParse(UserId, out Guid tenantId))
                 {
                     return tenantId;
                 }

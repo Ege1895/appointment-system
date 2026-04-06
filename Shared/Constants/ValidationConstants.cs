@@ -14,5 +14,8 @@ namespace AppointmentSystem.Api.Shared.Constants
         public const string SUBDOMAIN_FORMAT = "Subdomain may only contain lowercase letters, numbers, and hyphens";
         public const string START_BEFORE_END = "Start time must be before end time";
         public const string BREAK_START_BEFORE_BREAK_END = "Break start time must be before break end time";
+
+        public const string LATEST_KVKK_VERSION = "v1.0";
+        public const string LATEST_PRIVACY_POLICY_VERSION = "v1.0";
     }
 }

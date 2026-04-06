@@ -7,5 +7,8 @@ namespace AppointmentSystem.Api.Modules.UserModule.DTOs
         public required string Email { get; set; }
         public required string Password { get; set; }
         public required string PhoneNumber { get; set; }
+
+        public required bool KvkkAccepted { get; set; }
+        public required bool PrivacyPolicyAccepted { get; set; }
     }
 }

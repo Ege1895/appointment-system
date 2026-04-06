@@ -38,5 +38,11 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Models
         
         public bool IsOpen { get; set; } = true;
         public bool RefreshTokenUsed { get; set; } = false;
+
+        public bool KvkkAccepted { get; set; }
+        public bool PrivacyPolicyAccepted { get; set; }
+        public DateTime? AcceptedAt { get; set; }
+        public string? KvkkVersion { get; set; }
+        public string? PrivacyVersion { get; set; }
     }
 }

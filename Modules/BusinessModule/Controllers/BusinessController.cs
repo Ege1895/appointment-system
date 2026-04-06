@@ -9,7 +9,7 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Controllers
 {
     [ApiController]
     [Route("api/v1/business")]
-    [Authorize(Roles = Roles.Business)]
+    [Authorize(Roles = nameof(Roles.Business))]
     public class BusinessController : ControllerBase
     {
         private readonly IBusinessService _businessService;

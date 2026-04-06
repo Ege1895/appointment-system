@@ -42,7 +42,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
         {
             Guid userId = GetRequiredUserId();
 
-            if (_currentUserService.Role != Roles.User)
+            if (_currentUserService.Role != Roles.User.ToString())
             {
                 throw new BusinessException(ErrorMessages.UNAUTHORIZED_ACCESS);
             }
@@ -113,7 +113,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
         {
             Guid userId = GetRequiredUserId();
 
-            if (_currentUserService.Role != Roles.User)
+            if (_currentUserService.Role != Roles.User.ToString())
             {
                 throw new BusinessException(ErrorMessages.UNAUTHORIZED_ACCESS);
             }
@@ -125,7 +125,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
         {
             Guid userId = GetRequiredUserId();
 
-            if (_currentUserService.Role != Roles.User)
+            if (_currentUserService.Role != Roles.User.ToString())
             {
                 throw new BusinessException(ErrorMessages.UNAUTHORIZED_ACCESS);
             }
@@ -165,7 +165,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
         {
             Guid businessId = GetRequiredUserId();
 
-            if (_currentUserService.Role != Roles.Business)
+            if (_currentUserService.Role != Roles.Business.ToString())
             {
                 throw new BusinessException(ErrorMessages.UNAUTHORIZED_ACCESS);
             }
@@ -299,12 +299,12 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
             Guid currentUserId = GetRequiredUserId();
             string role = _currentUserService.Role ?? string.Empty;
 
-            if (role == Roles.Business && appointment.BusinessId == currentUserId)
+            if (role == Roles.Business.ToString() && appointment.BusinessId == currentUserId)
             {
                 return;
             }
 
-            if (role == Roles.User)
+            if (role == Roles.User.ToString())
             {
                 if (allowCustomer && appointment.UserId == currentUserId)
                 {

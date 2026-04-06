@@ -95,8 +95,8 @@ namespace AppointmentSystem.Api.Modules.WorkingHourModule.Services
             string? role = _currentUserService.Role;
 
             bool isAuthorized =
-                (role == Roles.Business && employee.BusinessId == currentUserId) ||
-                (role == Roles.User && employee.UserId == currentUserId && employee.CanManageOwnSchedule);
+                (role == Roles.Business.ToString() && employee.BusinessId == currentUserId) ||
+                (role == Roles.User.ToString() && employee.UserId == currentUserId && employee.CanManageOwnSchedule);
 
             if (!isAuthorized)
             {
