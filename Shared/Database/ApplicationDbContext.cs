@@ -35,6 +35,7 @@ namespace AppointmentSystem.Api.Shared.Database
         public DbSet<EmployeeOffering> EmployeeOfferings { get; set; }
         public DbSet<AppointmentNote> AppointmentNotes { get; set; }
         public DbSet<AppointmentMessage> AppointmentMessages { get; set; }
+        public DbSet<BusinessCustomerBlock> BusinessCustomerBlocks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -70,6 +71,9 @@ namespace AppointmentSystem.Api.Shared.Database
 
             modelBuilder.Entity<AppointmentMessage>().HasQueryFilter(m => !m.IsDeleted && 
                 (!_currentUserService.TenantId.HasValue || m.BusinessId == _currentUserService.TenantId.Value));
+
+            modelBuilder.Entity<BusinessCustomerBlock>().HasQueryFilter(b => !b.IsDeleted && 
+                (!_currentUserService.TenantId.HasValue || b.BusinessId == _currentUserService.TenantId.Value));
         }
     }
 }

@@ -10,5 +10,10 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
     {
         Task<(IReadOnlyList<BusinessCustomerSummaryDto> Items, PaginationMeta Meta)> GetCustomersAsync(GetCustomersQuery query);
         Task<BusinessCustomerDetailDto> GetCustomerDetailAsync(Guid customerId);
+
+        Task BlockCustomerAsync(BlockCustomerRequest request);
+        Task UnblockCustomerAsync(Guid userId);
+        Task<List<BlockedCustomerResponseDto>> GetBlockedCustomersAsync();
+        Task<bool> IsBlockedAsync(Guid businessId, Guid userId);
     }
 }

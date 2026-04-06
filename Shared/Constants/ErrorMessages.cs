@@ -44,4 +44,5 @@ public class ErrorMessages
     public const string MAIN_BRANCH_DELETE_ERROR = "Ana şube silinemez. Lütfen önce başka bir şubeyi ana şube olarak işaretleyin.";
     public const string BRANCH_LIMIT_EXCEEDED = "Şube oluşturma limitine ulaşıldı. Maksimum şube sayısı:";
     public const string EMPLOYEE_NOT_ASSIGNED_TO_OFFERING = "Seçilen personel bu hizmeti vermemektedir.";
+    public const string CUSTOMER_BLOCKED_BY_BUSINESS = "Şu an için bu işletmeden randevu alamazsınız.";
 }

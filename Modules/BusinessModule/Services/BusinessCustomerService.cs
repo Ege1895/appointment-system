@@ -5,7 +5,9 @@ using System.Threading.Tasks;
 using AppointmentSystem.Api.Modules.AppointmentModule.DTOs;
 using AppointmentSystem.Api.Modules.AppointmentModule.Enums;
 using AppointmentSystem.Api.Modules.BusinessModule.DTOs;
+using AppointmentSystem.Api.Modules.BusinessModule.Models;
 using AppointmentSystem.Api.Shared.Authentication;
+using AppointmentSystem.Api.Shared.Constants;
 using AppointmentSystem.Api.Shared.Database;
 using Microsoft.EntityFrameworkCore;
 using Shared.Responses;
@@ -161,6 +163,82 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
                 FirstAppointmentDate = stats.FirstAppointmentDate,
                 RecentAppointments = recentAppointments
             };
+        }
+
+        public async Task BlockCustomerAsync(BlockCustomerRequest request)
+        {
+            var businessId = _currentUserService.TenantId ?? throw new UnauthorizedAccessException();
+
+            // Kullanıcı var mı?
+            var userExists = await _context.Users.AnyAsync(u => u.Id == request.UserId);
+            if (!userExists)
+            {
+                throw new KeyNotFoundException(ErrorMessages.USER_NOT_FOUND_FOR_EMPLOYEE);
+            }
+
+            // Zaten engellenmiş mi?
+            var alreadyBlocked = await _context.BusinessCustomerBlocks
+                .AnyAsync(b => b.BusinessId == businessId && b.UserId == request.UserId && !b.IsDeleted);
+
+            if (alreadyBlocked)
+            {
+                throw new InvalidOperationException("Bu kullanıcı zaten engellenmiş.");
+            }
+
+            var block = new BusinessCustomerBlock
+            {
+                BusinessId = businessId,
+                UserId = request.UserId,
+                Reason = request.Reason,
+                BlockedAt = DateTime.UtcNow
+            };
+
+            await _context.BusinessCustomerBlocks.AddAsync(block);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task UnblockCustomerAsync(Guid userId)
+        {
+            var businessId = _currentUserService.TenantId ?? throw new UnauthorizedAccessException();
+
+            var block = await _context.BusinessCustomerBlocks
+                .FirstOrDefaultAsync(b => b.BusinessId == businessId && b.UserId == userId && !b.IsDeleted);
+
+            if (block == null)
+            {
+                throw new KeyNotFoundException("Engelleme kaydı bulunamadı.");
+            }
+
+            block.IsDeleted = true;
+            block.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<BlockedCustomerResponseDto>> GetBlockedCustomersAsync()
+        {
+            var businessId = _currentUserService.TenantId ?? throw new UnauthorizedAccessException();
+
+            return await _context.BusinessCustomerBlocks
+                .Where(b => b.BusinessId == businessId && !b.IsDeleted)
+                .Select(b => new BlockedCustomerResponseDto
+                {
+                    UserId = b.UserId,
+                    FirstName = b.User.IsDeleted ? DELETED_USER_NAME : b.User.FirstName,
+                    LastName = b.User.IsDeleted ? string.Empty : b.User.LastName,
+                    Email = b.User.IsDeleted ? DELETED_USER_CONTACT : b.User.Email,
+                    Reason = b.Reason,
+                    BlockedAt = b.BlockedAt
+                })
+                .ToListAsync();
+        }
+
+        public async Task<bool> IsBlockedAsync(Guid businessId, Guid userId)
+        {
+            // Bu metod randevu akışında çağrıldığı için tenant izolasyonunu IgnoreQueryFilters ile aşmamız gerekebilir 
+            // ama burada zaten businessId parametre olarak geliyor.
+            return await _context.BusinessCustomerBlocks
+                .AnyAsync(b => b.BusinessId == businessId && b.UserId == userId && !b.IsDeleted);
         }
     }
 }

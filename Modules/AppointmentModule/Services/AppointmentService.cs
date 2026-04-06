@@ -7,6 +7,7 @@ using AppointmentSystem.Api.Shared.Authentication;
 using AppointmentSystem.Api.Shared.Constants;
 using AppointmentSystem.Api.Shared.Database;
 using AppointmentSystem.Api.Shared.Exceptions;
+using AppointmentSystem.Api.Modules.BusinessModule.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
@@ -17,15 +18,18 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IBusinessCustomerService _businessCustomerService;
         private readonly ILogger<AppointmentService> _logger;
 
         public AppointmentService(
             ApplicationDbContext context,
             ICurrentUserService currentUserService,
+            IBusinessCustomerService businessCustomerService,
             ILogger<AppointmentService> logger)
         {
             _context = context;
             _currentUserService = currentUserService;
+            _businessCustomerService = businessCustomerService;
             _logger = logger;
         }
 
@@ -45,6 +49,12 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
             if (_currentUserService.Role != Roles.User.ToString())
             {
                 throw new BusinessException(ErrorMessages.UNAUTHORIZED_ACCESS);
+            }
+
+            bool isBlocked = await _businessCustomerService.IsBlockedAsync(request.BusinessId, userId);
+            if (isBlocked) 
+            {
+                throw new BusinessException(ErrorMessages.CUSTOMER_BLOCKED_BY_BUSINESS);
             }
 
             Offering? offering = await _context.Offerings

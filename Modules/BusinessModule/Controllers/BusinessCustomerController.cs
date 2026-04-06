@@ -45,5 +45,49 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Controllers
                 return NotFound(ApiResponse<object>.FailureResponse(ex.Message));
             }
         }
+
+        [HttpPost("block")]
+        [ProducesResponseType(typeof(ApiResponse<object>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), (int)HttpStatusCode.BadRequest)]
+        public async Task<IActionResult> BlockCustomer([FromBody] BlockCustomerRequest request)
+        {
+            try
+            {
+                await _businessCustomerService.BlockCustomerAsync(request);
+                return Ok(ApiResponse<object>.SuccessResponse(null!));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ApiResponse<object>.FailureResponse(ex.Message));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.FailureResponse(ex.Message));
+            }
+        }
+
+        [HttpDelete("{userId:guid}/block")]
+        [ProducesResponseType(typeof(ApiResponse<object>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), (int)HttpStatusCode.NotFound)]
+        public async Task<IActionResult> UnblockCustomer(Guid userId)
+        {
+            try
+            {
+                await _businessCustomerService.UnblockCustomerAsync(userId);
+                return Ok(ApiResponse<object>.SuccessResponse(null!));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.FailureResponse(ex.Message));
+            }
+        }
+
+        [HttpGet("blocked")]
+        [ProducesResponseType(typeof(ApiResponse<List<BlockedCustomerResponseDto>>), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> GetBlockedCustomers()
+        {
+            var blockedCustomers = await _businessCustomerService.GetBlockedCustomersAsync();
+            return Ok(ApiResponse<List<BlockedCustomerResponseDto>>.SuccessResponse(blockedCustomers));
+        }
     }
 }
