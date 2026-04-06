@@ -15,5 +15,7 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
         Task UnblockCustomerAsync(Guid userId);
         Task<List<BlockedCustomerResponseDto>> GetBlockedCustomersAsync();
         Task<bool> IsBlockedAsync(Guid businessId, Guid userId);
+
+        Task SendEmailToCustomerAsync(SendCustomerEmailRequest request);
     }
 }

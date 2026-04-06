@@ -65,6 +65,9 @@ namespace AppointmentSystem.Api.Migrations
                     b.Property<DateTime?>("ProposedRescheduleDateUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("ReminderSentAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime?>("RescheduleTimeoutUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -508,6 +511,60 @@ namespace AppointmentSystem.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("BusinessCustomerBlocks", (string)null);
+                });
+
+            modelBuilder.Entity("AppointmentSystem.Api.Modules.BusinessModule.Models.BusinessCustomerEmailLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BusinessId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("MessageBody")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("RowVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BusinessId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("BusinessCustomerEmailLogs");
                 });
 
             modelBuilder.Entity("AppointmentSystem.Api.Modules.EmployeeModule.Models.Employee", b =>
@@ -991,6 +1048,25 @@ namespace AppointmentSystem.Api.Migrations
                 });
 
             modelBuilder.Entity("AppointmentSystem.Api.Modules.BusinessModule.Models.BusinessCustomerBlock", b =>
+                {
+                    b.HasOne("AppointmentSystem.Api.Modules.BusinessModule.Models.Business", "Business")
+                        .WithMany()
+                        .HasForeignKey("BusinessId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AppointmentSystem.Api.Modules.UserModule.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Business");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("AppointmentSystem.Api.Modules.BusinessModule.Models.BusinessCustomerEmailLog", b =>
                 {
                     b.HasOne("AppointmentSystem.Api.Modules.BusinessModule.Models.Business", "Business")
                         .WithMany()

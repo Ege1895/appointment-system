@@ -10,6 +10,8 @@ using AppointmentSystem.Api.Shared.Authentication;
 using AppointmentSystem.Api.Shared.Constants;
 using AppointmentSystem.Api.Shared.Database;
 using Microsoft.EntityFrameworkCore;
+using AppointmentSystem.Api.Shared.Notifications;
+using AppointmentSystem.Api.Shared.Notifications.Templates;
 using Shared.Responses;
 
 namespace AppointmentSystem.Api.Modules.BusinessModule.Services
@@ -18,14 +20,17 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IEmailService _emailService;
 
         private const string DELETED_USER_NAME = "[Silinmiş Kullanıcı]";
         private const string DELETED_USER_CONTACT = "-";
+        private const int MAX_MANUAL_EMAILS_PER_DAY = 10;
 
-        public BusinessCustomerService(ApplicationDbContext context, ICurrentUserService currentUserService)
+        public BusinessCustomerService(ApplicationDbContext context, ICurrentUserService currentUserService, IEmailService emailService)
         {
             _context = context;
             _currentUserService = currentUserService;
+            _emailService = emailService;
         }
 
         public async Task<(IReadOnlyList<BusinessCustomerSummaryDto> Items, PaginationMeta Meta)> GetCustomersAsync(GetCustomersQuery query)
@@ -235,10 +240,64 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
 
         public async Task<bool> IsBlockedAsync(Guid businessId, Guid userId)
         {
-            // Bu metod randevu akışında çağrıldığı için tenant izolasyonunu IgnoreQueryFilters ile aşmamız gerekebilir 
-            // ama burada zaten businessId parametre olarak geliyor.
             return await _context.BusinessCustomerBlocks
                 .AnyAsync(b => b.BusinessId == businessId && b.UserId == userId && !b.IsDeleted);
+        }
+
+        public async Task SendEmailToCustomerAsync(SendCustomerEmailRequest request)
+        {
+            var businessId = _currentUserService.TenantId ?? throw new UnauthorizedAccessException();
+
+            // Sınır kontrolü (Günde 10 adet)
+            var startOfToday = DateTime.UtcNow.Date;
+            var sentTodayCount = await _context.BusinessCustomerEmailLogs
+                .CountAsync(l => l.BusinessId == businessId && 
+                                 l.UserId == request.CustomerId && 
+                                 l.SentAt >= startOfToday &&
+                                 !l.IsDeleted);
+
+            if (sentTodayCount >= MAX_MANUAL_EMAILS_PER_DAY)
+            {
+                throw new InvalidOperationException($"Bu müşteriye günlük maksimum e-posta gönderim sınırına ({MAX_MANUAL_EMAILS_PER_DAY}) ulaştınız.");
+            }
+
+            // İşletme-Müşteri ilişkisi var mı? (En az bir randevu)
+            var hasRelationship = await _context.Appointments
+                .AnyAsync(a => a.BusinessId == businessId && a.UserId == request.CustomerId && !a.IsDeleted);
+
+            if (!hasRelationship)
+            {
+                throw new InvalidOperationException("Sadece randevusu olan müşterilere mesaj gönderebilirsiniz.");
+            }
+
+            var user = await _context.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Id == request.CustomerId);
+            if (user == null || user.IsDeleted)
+            {
+                throw new KeyNotFoundException("Müşteri bulunamadı veya hesabı silinmiş.");
+            }
+
+            // İşletme bilgisi
+            var business = await _context.Businesses.FindAsync(businessId);
+            if (business == null) throw new KeyNotFoundException("İşletme bulunamadı.");
+
+            // E-posta gönder
+            var subject = EmailTemplates.Format(EmailTemplates.MANUAL_MESSAGE_SUBJECT, business.CompanyName);
+            var body = EmailTemplates.Format(EmailTemplates.MANUAL_MESSAGE_BODY, user.FirstName, business.CompanyName, request.Message);
+
+            await _emailService.SendAsync(user.Email, subject, body);
+
+            // Log kaydet
+            var log = new BusinessCustomerEmailLog
+            {
+                BusinessId = businessId,
+                UserId = request.CustomerId,
+                Subject = request.Subject,
+                MessageBody = request.Message,
+                SentAt = DateTime.UtcNow
+            };
+
+            await _context.BusinessCustomerEmailLogs.AddAsync(log);
+            await _context.SaveChangesAsync();
         }
     }
 }

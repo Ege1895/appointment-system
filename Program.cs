@@ -18,6 +18,7 @@ using AppointmentSystem.Api.Shared.Authentication;
 using AppointmentSystem.Api.Shared.Database;
 using AppointmentSystem.Api.Shared.Responses;
 using AppointmentSystem.Api.Shared.Constants;
+using AppointmentSystem.Api.Shared.Notifications;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -103,6 +104,7 @@ builder.Services.AddScoped<ICacheService, CacheService>();
 builder.Services.AddScoped<IHealthService, HealthService>();
 
 builder.Services.AddHostedService<AppointmentStateWorker>();
+builder.Services.AddHostedService<AppointmentReminderWorker>();
 
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
@@ -137,6 +139,8 @@ builder.Services.AddScoped<ICatalogService, CatalogService>();
 builder.Services.AddScoped<IHomeService, HomeService>();
 builder.Services.AddScoped<IBranchService, BranchService>();
 builder.Services.AddScoped<IBusinessCustomerService, BusinessCustomerService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
 builder.Services.AddScoped<AuditableEntitySaveChangesInterceptor>();
 
 builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>

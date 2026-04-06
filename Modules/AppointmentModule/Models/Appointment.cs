@@ -42,5 +42,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Models
         public bool IsRescheduleRequested { get; set; }
         public DateTime? ProposedRescheduleDateUtc { get; set; }
         public DateTime? RescheduleTimeoutUtc { get; set; }
+
+        public DateTime? ReminderSentAt { get; set; }
     }
 }

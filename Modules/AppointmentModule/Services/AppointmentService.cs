@@ -8,6 +8,8 @@ using AppointmentSystem.Api.Shared.Constants;
 using AppointmentSystem.Api.Shared.Database;
 using AppointmentSystem.Api.Shared.Exceptions;
 using AppointmentSystem.Api.Modules.BusinessModule.Services;
+using AppointmentSystem.Api.Shared.Notifications;
+using AppointmentSystem.Api.Shared.Notifications.Templates;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
@@ -19,17 +21,20 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
         private readonly ApplicationDbContext _context;
         private readonly ICurrentUserService _currentUserService;
         private readonly IBusinessCustomerService _businessCustomerService;
+        private readonly IEmailService _emailService;
         private readonly ILogger<AppointmentService> _logger;
 
         public AppointmentService(
             ApplicationDbContext context,
             ICurrentUserService currentUserService,
             IBusinessCustomerService businessCustomerService,
+            IEmailService emailService,
             ILogger<AppointmentService> logger)
         {
             _context = context;
             _currentUserService = currentUserService;
             _businessCustomerService = businessCustomerService;
+            _emailService = emailService;
             _logger = logger;
         }
 
@@ -225,6 +230,9 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
 
             appointment.Status = AppointmentStatus.Cancelled;
             await _context.SaveChangesAsync();
+
+            // Notify Customer (Fire-and-forget)
+            _ = SendNotificationAsync(appointment, "AppointmentCancelled");
         }
 
         public async Task AcceptAsync(Guid appointmentId)
@@ -234,6 +242,9 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
             app.Status = AppointmentStatus.Confirmed;
             app.ActionTimeoutUtc = null;
             await _context.SaveChangesAsync();
+
+            // Notify Customer (Fire-and-forget)
+            _ = SendNotificationAsync(app, "AppointmentConfirmed");
         }
 
         public async Task DeclineAsync(Guid appointmentId)
@@ -243,6 +254,9 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
             app.Status = AppointmentStatus.Declined;
             app.ActionTimeoutUtc = null;
             await _context.SaveChangesAsync();
+
+            // Notify Customer (Fire-and-forget)
+            _ = SendNotificationAsync(app, "AppointmentDeclined");
         }
 
         public async Task TransferAsync(Guid appointmentId, Guid newEmployeeId)
@@ -372,6 +386,53 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
                 .FirstOrDefaultAsync();
 
             return queryUserId.HasValue && queryUserId.Value == currentUserId;
+        }
+
+        private async Task SendNotificationAsync(Appointment app, string type)
+        {
+            try
+            {
+                // Ensure relations are loaded
+                if (app.User == null || app.Business == null || app.Offering == null)
+                {
+                    app = await _context.Appointments
+                        .Include(a => a.User)
+                        .Include(a => a.Business)
+                        .Include(a => a.Offering)
+                        .FirstOrDefaultAsync(a => a.Id == app.Id) ?? app;
+                }
+
+                if (app.User == null) return;
+
+                string subject = string.Empty;
+                string body = string.Empty;
+                string dateStr = $"{app.StartTimeUtc:dd.MM.yyyy HH:mm}";
+
+                switch (type)
+                {
+                    case "AppointmentConfirmed":
+                        subject = EmailTemplates.Format(EmailTemplates.APPOINTMENT_CONFIRMED_SUBJECT, app.Business.CompanyName);
+                        body = EmailTemplates.Format(EmailTemplates.APPOINTMENT_CONFIRMED_BODY, app.User.FirstName, app.Business.CompanyName, app.Offering.Name, dateStr);
+                        break;
+                    case "AppointmentDeclined":
+                        subject = EmailTemplates.Format(EmailTemplates.APPOINTMENT_DECLINED_SUBJECT, app.Business.CompanyName);
+                        body = EmailTemplates.Format(EmailTemplates.APPOINTMENT_DECLINED_BODY, app.User.FirstName, app.Business.CompanyName, app.Offering.Name, dateStr);
+                        break;
+                    case "AppointmentCancelled":
+                        subject = EmailTemplates.Format(EmailTemplates.APPOINTMENT_CANCELLED_SUBJECT, app.Business.CompanyName);
+                        body = EmailTemplates.Format(EmailTemplates.APPOINTMENT_CANCELLED_BODY, app.User.FirstName, app.Business.CompanyName, app.Offering.Name, dateStr);
+                        break;
+                }
+
+                if (!string.IsNullOrEmpty(subject))
+                {
+                    await _emailService.SendAsync(app.User.Email, subject, body);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send transactional email for appointment {AppointmentId} type {Type}.", app.Id, type);
+            }
         }
 
         private static AppointmentResponseDto MapToDto(Appointment a)
