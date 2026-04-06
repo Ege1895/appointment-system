@@ -193,6 +193,26 @@ namespace AppointmentSystem.Api.Modules.BranchModule.Services
             }
         }
 
+        public async Task<List<PublicBranchDto>> GetPublicBranchesAsync(Guid businessId)
+        {
+            return await _context.Branches
+                .AsNoTracking()
+                .Where(b => b.BusinessId == businessId && !b.IsDeleted && b.IsActive)
+                .OrderByDescending(b => b.IsMain)
+                .ThenBy(b => b.Name)
+                .Select(b => new PublicBranchDto
+                {
+                    Id = b.Id,
+                    Name = b.Name,
+                    Address = b.Address,
+                    City = b.City,
+                    District = b.District,
+                    PhoneNumber = b.PhoneNumber,
+                    IsMain = b.IsMain
+                })
+                .ToListAsync();
+        }
+
         private BranchResponseDto MapToResponse(Branch branch)
         {
             return new BranchResponseDto

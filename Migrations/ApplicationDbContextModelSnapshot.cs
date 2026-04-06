@@ -32,6 +32,9 @@ namespace AppointmentSystem.Api.Migrations
                     b.Property<DateTime?>("ActionTimeoutUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("BusinessId")
                         .HasColumnType("uuid");
 
@@ -89,6 +92,8 @@ namespace AppointmentSystem.Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("BusinessId");
 
                     b.HasIndex("OfferingId");
@@ -96,6 +101,8 @@ namespace AppointmentSystem.Api.Migrations
                     b.HasIndex("TransferredToEmployeeId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("BusinessId", "BranchId");
 
                     b.HasIndex("EmployeeId", "StartTimeUtc", "EndTimeUtc");
 
@@ -683,6 +690,11 @@ namespace AppointmentSystem.Api.Migrations
 
             modelBuilder.Entity("AppointmentSystem.Api.Modules.AppointmentModule.Models.Appointment", b =>
                 {
+                    b.HasOne("AppointmentSystem.Api.Modules.BranchModule.Models.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("AppointmentSystem.Api.Modules.BusinessModule.Models.Business", "Business")
                         .WithMany()
                         .HasForeignKey("BusinessId")
@@ -711,6 +723,8 @@ namespace AppointmentSystem.Api.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Branch");
 
                     b.Navigation("Business");
 

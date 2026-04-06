@@ -60,5 +60,13 @@ namespace AppointmentSystem.Api.Modules.BranchModule.Controllers
             await _branchService.SetMainBranchAsync(id);
             return Ok(ApiResponse<object>.SuccessResponse(null!));
         }
+
+        [HttpGet("/api/v1/businesses/{businessId:guid}/branches")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPublicBranches(Guid businessId)
+        {
+            List<PublicBranchDto> response = await _branchService.GetPublicBranchesAsync(businessId);
+            return Ok(ApiResponse<List<PublicBranchDto>>.SuccessResponse(response));
+        }
     }
 }

@@ -55,6 +55,29 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
                 throw new NotFoundException(ErrorMessages.OFFERING_NOT_FOUND);
             }
 
+            // Branch validation
+            if (request.BranchId.HasValue)
+            {
+                bool branchExists = await _context.Branches
+                    .AnyAsync(b => b.Id == request.BranchId.Value && b.BusinessId == request.BusinessId);
+
+                if (!branchExists)
+                {
+                    throw new NotFoundException(ErrorMessages.BRANCH_NOT_FOUND);
+                }
+
+                // Employee-Branch validation: Employee must be in the same branch OR unassigned (null branch)
+                bool employeeInBranch = await _context.Employees
+                    .AnyAsync(e => e.Id == request.EmployeeId && e.BusinessId == request.BusinessId 
+                                   && (e.BranchId == null || e.BranchId == request.BranchId.Value));
+
+                if (!employeeInBranch)
+                {
+                    // Personel bu şubede çalışmıyor (ve genel personel de değil)
+                    throw new BusinessException(ErrorMessages.EMPLOYEE_NOT_FOUND);
+                }
+            }
+
             DateTime endTimeUtc = request.StartTimeUtc.AddMinutes(offering.DurationInMinutes);
 
             using IDbContextTransaction transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
@@ -76,6 +99,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
                     BusinessId = request.BusinessId,
                     EmployeeId = request.EmployeeId,
                     OfferingId = request.OfferingId,
+                    BranchId = request.BranchId,
                     UserId = userId,
                     StartTimeUtc = request.StartTimeUtc,
                     EndTimeUtc = endTimeUtc,
@@ -89,19 +113,8 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
 
                 _logger.LogInformation("Appointment created. AppointmentId: {AppointmentId}, UserId: {UserId}", appointment.Id, userId);
 
-                return new AppointmentResponseDto
-                {
-                    AppointmentId = appointment.Id,
-                    BusinessId = appointment.BusinessId,
-                    EmployeeId = appointment.EmployeeId,
-                    UserId = appointment.UserId,
-                    OfferingId = appointment.OfferingId,
-                    StartTimeUtc = appointment.StartTimeUtc,
-                    EndTimeUtc = appointment.EndTimeUtc,
-                    Status = appointment.Status,
-                    ActionTimeoutUtc = appointment.ActionTimeoutUtc,
-                    CreatedAt = appointment.CreatedAt
-                };
+                // Fetching again or manually mapping with name if needed, but for response we can use the entity
+                return MapToDto(appointment);
             }
             catch (DbUpdateException)
             {
@@ -147,6 +160,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
                 .Include(a => a.Employee)
                 .Include(a => a.User)
                 .Include(a => a.Offering)
+                .Include(a => a.Branch)
                 .Include(a => a.TransferredToEmployee)
                 .AsNoTracking()
                 .Where(a => a.UserId == userId
@@ -270,6 +284,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
                 .Include(a => a.Employee)
                 .Include(a => a.User)
                 .Include(a => a.Offering)
+                .Include(a => a.Branch)
                 .Include(a => a.TransferredToEmployee)
                 .AsNoTracking();
 
@@ -349,6 +364,8 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
                 CustomerName = $"{a.User.FirstName} {a.User.LastName}",
                 OfferingId = a.OfferingId,
                 OfferingName = a.Offering.Name,
+                BranchId = a.BranchId,
+                BranchName = a.Branch?.IsDeleted == true ? "(Branch Deleted)" : a.Branch?.Name,
                 StartTimeUtc = a.StartTimeUtc,
                 EndTimeUtc = a.EndTimeUtc,
                 Status = a.Status,

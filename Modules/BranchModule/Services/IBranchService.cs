@@ -33,5 +33,10 @@ namespace AppointmentSystem.Api.Modules.BranchModule.Services
         /// Belirtilen şubeyi işletmenin ana şubesi olarak ayarlar.
         /// </summary>
         Task SetMainBranchAsync(Guid branchId);
+
+        /// <summary>
+        /// Müşterilerin (anonim) bir işletmeye ait şubeleri görmesi için kullanılır.
+        /// </summary>
+        Task<List<PublicBranchDto>> GetPublicBranchesAsync(Guid businessId);
     }
 }
