@@ -18,6 +18,9 @@ namespace AppointmentSystem.Api.Modules.EmployeeModule.DTOs
 
         public bool CanManageOwnSchedule { get; set; }
         
+        public Guid? BranchId { get; set; }
+        public string? BranchName { get; set; }
+
         public DateTime CreatedAt { get; set; }
     }
 }

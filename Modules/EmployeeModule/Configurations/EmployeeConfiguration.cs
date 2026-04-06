@@ -33,6 +33,14 @@ namespace AppointmentSystem.Api.Modules.EmployeeModule.Configurations
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            builder.HasOne(e => e.Branch)
+                .WithMany()
+                .HasForeignKey(e => e.BranchId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasIndex(e => new { e.BusinessId, e.BranchId });
+
             // Global Query Filter for Soft Delete
             builder.HasQueryFilter(e => !e.IsDeleted);
         }

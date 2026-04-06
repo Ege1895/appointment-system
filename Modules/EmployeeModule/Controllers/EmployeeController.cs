@@ -26,7 +26,7 @@ namespace AppointmentSystem.Api.Modules.EmployeeModule.Controllers
         public async Task<IActionResult> CreateEmployee([FromBody] CreateEmployeeRequest request)
         {
             EmployeeResponseDto response = await _employeeService.CreateEmployeeAsync(request);
-            return Ok(response);
+            return Ok(ApiResponse<EmployeeResponseDto>.SuccessResponse(response));
         }
 
         [HttpPost("bulk")]
@@ -34,7 +34,7 @@ namespace AppointmentSystem.Api.Modules.EmployeeModule.Controllers
         {
             // Handles multiple employee creations efficiently using EF Core AddRangeAsync
             IEnumerable<EmployeeResponseDto> response = await _employeeService.CreateEmployeesAsync(requests);
-            return Ok(response);
+            return Ok(ApiResponse<IEnumerable<EmployeeResponseDto>>.SuccessResponse(response));
         }
 
         [HttpGet]
@@ -47,6 +47,20 @@ namespace AppointmentSystem.Api.Modules.EmployeeModule.Controllers
             PaginationMeta meta = PaginationMeta.Create(query.Page, query.PageSize, totalCount);
 
             return Ok(ApiResponse<IEnumerable<EmployeeResponseDto>>.SuccessResponse(employees, meta));
+        }
+
+        [HttpPost("{id:guid}/branch")]
+        public async Task<IActionResult> AssignBranch(Guid id, [FromBody] AssignEmployeeToBranchRequest request)
+        {
+            await _employeeService.AssignBranchAsync(id, request.BranchId);
+            return Ok(ApiResponse<object>.SuccessResponse(null!));
+        }
+
+        [HttpGet("branch/{branchId:guid}")]
+        public async Task<IActionResult> GetByBranch(Guid branchId)
+        {
+            IEnumerable<EmployeeResponseDto> employees = await _employeeService.GetByBranchAsync(branchId);
+            return Ok(ApiResponse<IEnumerable<EmployeeResponseDto>>.SuccessResponse(employees));
         }
     }
 }

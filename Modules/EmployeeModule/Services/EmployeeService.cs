@@ -23,12 +23,11 @@ namespace AppointmentSystem.Api.Modules.EmployeeModule.Services
 
         private Guid GetBusinessId()
         {
-            string? userIdString = _currentUserService.UserId;
-            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out Guid businessId))
+            if (!_currentUserService.TenantId.HasValue)
             {
                 throw new BusinessException(ErrorMessages.BUSINESS_CONTEXT_NOT_FOUND);
             }
-            return businessId;
+            return _currentUserService.TenantId.Value;
         }
 
         public async Task<EmployeeResponseDto> CreateEmployeeAsync(CreateEmployeeRequest request)
@@ -166,11 +165,63 @@ namespace AppointmentSystem.Api.Modules.EmployeeModule.Services
 
             List<Employee> employees = await _context.Employees
                 .Include(e => e.User)
+                .Include(e => e.Branch)
                 .AsNoTracking()
                 .Where(e => e.BusinessId == businessId)
                 .OrderByDescending(e => e.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
+                .ToListAsync();
+
+            return employees.Select(MapToResponse).ToList();
+        }
+
+        public async Task AssignBranchAsync(Guid employeeId, Guid? branchId)
+        {
+            Guid businessId = GetBusinessId();
+
+            Employee? employee = await _context.Employees
+                .FirstOrDefaultAsync(e => e.Id == employeeId && e.BusinessId == businessId);
+
+            if (employee == null)
+            {
+                throw new NotFoundException(ErrorMessages.EMPLOYEE_NOT_FOUND);
+            }
+
+            if (branchId.HasValue)
+            {
+                bool branchExists = await _context.Branches
+                    .AnyAsync(b => b.Id == branchId.Value && b.BusinessId == businessId);
+
+                if (!branchExists)
+                {
+                    throw new NotFoundException(ErrorMessages.BRANCH_NOT_FOUND);
+                }
+            }
+
+            employee.BranchId = branchId;
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<IEnumerable<EmployeeResponseDto>> GetByBranchAsync(Guid branchId)
+        {
+            Guid businessId = GetBusinessId();
+
+            // Şube kontrolü
+            bool branchExists = await _context.Branches
+                .AnyAsync(b => b.Id == branchId && b.BusinessId == businessId);
+
+            if (!branchExists)
+            {
+                throw new NotFoundException(ErrorMessages.BRANCH_NOT_FOUND);
+            }
+
+            List<Employee> employees = await _context.Employees
+                .Include(e => e.User)
+                .Include(e => e.Branch)
+                .AsNoTracking()
+                .Where(e => e.BusinessId == businessId && e.BranchId == branchId)
+                .OrderBy(e => e.FirstName)
                 .ToListAsync();
 
             return employees.Select(MapToResponse).ToList();
@@ -189,6 +240,8 @@ namespace AppointmentSystem.Api.Modules.EmployeeModule.Services
                 LastName = employee.LastName,
                 JobTitle = employee.JobTitle,
                 JobDescription = employee.JobDescription,
+                BranchId = employee.BranchId,
+                BranchName = employee.Branch?.Name,
                 CreatedAt = employee.CreatedAt
             };
         }

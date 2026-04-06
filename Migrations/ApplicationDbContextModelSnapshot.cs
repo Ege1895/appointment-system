@@ -338,6 +338,9 @@ namespace AppointmentSystem.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("BusinessId")
                         .HasColumnType("uuid");
 
@@ -391,9 +394,13 @@ namespace AppointmentSystem.Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("BusinessId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("BusinessId", "BranchId");
 
                     b.ToTable("Employees");
                 });
@@ -729,6 +736,11 @@ namespace AppointmentSystem.Api.Migrations
 
             modelBuilder.Entity("AppointmentSystem.Api.Modules.EmployeeModule.Models.Employee", b =>
                 {
+                    b.HasOne("AppointmentSystem.Api.Modules.BranchModule.Models.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("AppointmentSystem.Api.Modules.BusinessModule.Models.Business", "Business")
                         .WithMany()
                         .HasForeignKey("BusinessId")
@@ -739,6 +751,8 @@ namespace AppointmentSystem.Api.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Branch");
 
                     b.Navigation("Business");
 
