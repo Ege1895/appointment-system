@@ -37,5 +37,5 @@ public class ErrorMessages
     public const string PRIVACY_POLICY_NOT_ACCEPTED = "Gizlilik politikası onaylanmalıdır.";
     
     // Role Errors
-    public const string INVALID_ROLE_ASSIGNMENT = "Bu hesap tipine bu rol atanamaz.";
+    public const string INVALID_ROLE_ASSIGNMENT = "Seçilen rol, hesap türünüz ile uyumlu değil. Lütfen kontrol ediniz.";
 }
