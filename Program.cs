@@ -136,6 +136,7 @@ builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 builder.Services.AddScoped<ICatalogService, CatalogService>();
 builder.Services.AddScoped<IHomeService, HomeService>();
 builder.Services.AddScoped<IBranchService, BranchService>();
+builder.Services.AddScoped<IBusinessCustomerService, BusinessCustomerService>();
 builder.Services.AddScoped<AuditableEntitySaveChangesInterceptor>();
 
 builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
