@@ -65,5 +65,9 @@ namespace AppointmentSystem.Api.Shared.Constants
         public const int MAX_BRANCHES_DEFAULT = 3;
         public const int MAX_BRANCH_NAME_LENGTH = 150;
         public const int MAX_BRANCH_ADDRESS_LENGTH = 300;
+
+        // Appointment Notes
+        public const int MAX_NOTE_CONTENT_LENGTH = 2000;
+        public const int MAX_NOTES_PER_APPOINTMENT = 20;
     }
 }
