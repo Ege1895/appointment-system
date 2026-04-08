@@ -71,5 +71,30 @@ namespace AppointmentSystem.Api.Modules.ReportingModule.Controllers
                     ApiResponse<object>.FailureResponse("Gelir raporu oluşturulurken bir hata oluştu: " + ex.Message));
             }
         }
+
+        [HttpGet("branches")]
+        [ProducesResponseType(typeof(ApiResponse<BranchStatsReportResponseDto>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), (int)HttpStatusCode.BadRequest)]
+        public async Task<IActionResult> GetBranchStats([FromQuery] BranchStatsRequest request)
+        {
+            try
+            {
+                var report = await _reportingService.GetBranchStatsAsync(request);
+                return Ok(ApiResponse<BranchStatsReportResponseDto>.SuccessResponse(report));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResponse<object>.FailureResponse(ex.Message));
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode((int)HttpStatusCode.InternalServerError,
+                    ApiResponse<object>.FailureResponse("Şube istatistikleri oluşturulurken bir hata oluştu: " + ex.Message));
+            }
+        }
     }
 }

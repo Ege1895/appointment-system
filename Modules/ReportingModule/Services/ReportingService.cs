@@ -360,6 +360,114 @@ namespace AppointmentSystem.Api.Modules.ReportingModule.Services
             };
         }
 
+        public async Task<BranchStatsReportResponseDto> GetBranchStatsAsync(BranchStatsRequest request)
+        {
+            Guid businessId = _currentUserService.TenantId ?? throw new UnauthorizedAccessException();
+
+            // 1. Validasyon (Max 2 yıl)
+            if (request.StartDate >= request.EndDate)
+                throw new ArgumentException("Başlangıç tarihi bitiş tarihinden önce olmalıdır.");
+
+            if ((request.EndDate - request.StartDate).TotalDays > 365 * 2 + 1)
+                throw new ArgumentException("Maksimum 2 yıllık tarih aralığı seçilebilir.");
+
+            // 2. Cache Kontrolü
+            string cacheKey = string.Format("report:branches:{0}:{1:yyyyMMdd}:{2:yyyyMMdd}",
+                businessId, request.StartDate, request.EndDate);
+
+            BranchStatsReportResponseDto? cachedData = await _cacheService.GetAsync<BranchStatsReportResponseDto>(cacheKey);
+            if (cachedData != null) return cachedData;
+
+            // 3. Şube Listesi (Silinenler dahil - IgnoreQueryFilters)
+            var allBranches = await _context.Branches
+                .IgnoreQueryFilters()
+                .Where(b => b.BusinessId == businessId)
+                .Select(b => new { b.Id, b.Name, b.IsMain })
+                .ToListAsync();
+
+            // 4. Randevuları Çek
+            var appointments = await _context.Appointments
+                .Include(a => a.Offering)
+                .Where(a => a.BusinessId == businessId &&
+                            a.StartTimeUtc >= request.StartDate &&
+                            a.StartTimeUtc <= request.EndDate &&
+                            !a.IsDeleted)
+                .Select(a => new
+                {
+                    a.BranchId,
+                    a.Status,
+                    a.EmployeeId,
+                    a.StartTimeUtc,
+                    Price = a.PriceAtBooking ?? (a.Offering.Price ?? 0),
+                    a.Offering.PriceType
+                })
+                .ToListAsync();
+
+            List<BranchStatDto> branchStats = new List<BranchStatDto>();
+
+            // Mevcut (veya silinmiş) tüm şubeler için istatistikleri oluştur
+            foreach (var branch in allBranches)
+            {
+                var branchApps = appointments.Where(a => a.BranchId == branch.Id).ToList();
+                branchStats.Add(MapToBranchStatDto(branch.Id, branch.Name, branch.IsMain, branchApps));
+            }
+
+            // Atanmamış (Unassigned) randevular varsa ekle
+            var unassignedApps = appointments.Where(a => a.BranchId == null).ToList();
+            if (unassignedApps.Any())
+            {
+                branchStats.Add(MapToBranchStatDto(null, "Unassigned", false, unassignedApps));
+            }
+
+            // Sonuçları Sırala ve Paketle
+            var orderedBranches = branchStats.OrderByDescending(b => b.TotalAppointments).ToList();
+
+            var response = new BranchStatsReportResponseDto
+            {
+                StartDate = request.StartDate,
+                EndDate = request.EndDate,
+                Branches = orderedBranches,
+                TotalAcrossAllBranches = appointments.Count,
+                BusiestBranchId = orderedBranches.FirstOrDefault()?.BranchId
+            };
+
+            // 5. Önbelleğe al (15 dakika)
+            await _cacheService.SetAsync(cacheKey, response, TimeSpan.FromMinutes(15));
+
+            return response;
+        }
+
+        private BranchStatDto MapToBranchStatDto(Guid? branchId, string branchName, bool isMain, List<dynamic> apps)
+        {
+            var completedApps = apps.Where(a => a.Status == AppointmentStatus.Completed).ToList();
+
+            return new BranchStatDto
+            {
+                BranchId = branchId,
+                BranchName = branchName,
+                IsMain = isMain,
+                TotalAppointments = apps.Count,
+                CompletedAppointments = completedApps.Count,
+                CancelledAppointments = apps.Count(a => a.Status == AppointmentStatus.Cancelled),
+                TotalRevenue = completedApps
+                    .Where(a => a.PriceType == OfferingModule.Enums.PriceType.Fixed)
+                    .Sum(a => (decimal)a.Price),
+                ActiveEmployees = apps.Select(a => a.EmployeeId).Distinct().Count(),
+                BusiestDayOfWeek = GetBusiestDay(apps.Select(a => (DateTime)a.StartTimeUtc).ToList())
+            };
+        }
+
+        private string? GetBusiestDay(List<DateTime> dates)
+        {
+            if (!dates.Any()) return null;
+
+            return dates
+                .GroupBy(d => d.DayOfWeek)
+                .OrderByDescending(g => g.Count())
+                .First()
+                .Key.ToString();
+        }
+
         private DateTime GetStartOfWeek(DateTime dt)
         {
             int diff = (7 + (dt.DayOfWeek - DayOfWeek.Monday)) % 7;
