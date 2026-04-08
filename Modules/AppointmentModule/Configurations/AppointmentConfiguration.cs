@@ -25,6 +25,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Configurations
             builder.HasIndex(a => new { a.EmployeeId, a.StartTimeUtc, a.EndTimeUtc });
             builder.HasIndex(a => a.UserId);
             builder.HasIndex(a => a.BusinessId);
+            builder.HasIndex(a => new { a.BusinessId, a.BranchId });
 
             // İlişkiler
             builder.HasOne(a => a.Business)
@@ -50,6 +51,12 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Configurations
             builder.HasOne(a => a.TransferredToEmployee)
                 .WithMany()
                 .HasForeignKey(a => a.TransferredToEmployeeId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasOne(a => a.Branch)
+                .WithMany()
+                .HasForeignKey(a => a.BranchId)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.SetNull);
 

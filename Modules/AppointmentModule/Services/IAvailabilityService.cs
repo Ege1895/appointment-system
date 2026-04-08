@@ -4,6 +4,6 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
 {
     public interface IAvailabilityService
     {
-        Task<List<TimeSpan>> GetAvailableSlotsAsync(Guid employeeId, DateTime date, Guid offeringId);
+        Task<List<TimeSpan>> GetAvailableSlotsAsync(Guid employeeId, DateTime date, Guid offeringId, Guid? branchId = null);
     }
 }

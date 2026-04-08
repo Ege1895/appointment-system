@@ -9,6 +9,7 @@ using AppointmentSystem.Api.Modules.AppointmentModule.Services;
 using AppointmentSystem.Api.Modules.FeedbackModule.Services;
 using AppointmentSystem.Api.Modules.CatalogModule.Services;
 using AppointmentSystem.Api.Modules.HomeModule.Services;
+using AppointmentSystem.Api.Modules.BranchModule.Services;
 using AppointmentSystem.Api.Modules.Auth.Services;
 using AppointmentSystem.Api.Shared.Middleware;
 using FluentValidation;
@@ -17,6 +18,8 @@ using AppointmentSystem.Api.Shared.Authentication;
 using AppointmentSystem.Api.Shared.Database;
 using AppointmentSystem.Api.Shared.Responses;
 using AppointmentSystem.Api.Shared.Constants;
+using AppointmentSystem.Api.Shared.Notifications;
+using AppointmentSystem.Api.Modules.ReportingModule.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -102,6 +105,7 @@ builder.Services.AddScoped<ICacheService, CacheService>();
 builder.Services.AddScoped<IHealthService, HealthService>();
 
 builder.Services.AddHostedService<AppointmentStateWorker>();
+builder.Services.AddHostedService<AppointmentReminderWorker>();
 
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
@@ -129,9 +133,16 @@ builder.Services.AddScoped<IOfferingService, OfferingService>();
 builder.Services.AddScoped<IWorkingHourService, WorkingHourService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
+builder.Services.AddScoped<IAppointmentNoteService, AppointmentNoteService>();
+builder.Services.AddScoped<IAppointmentMessageService, AppointmentMessageService>();
 builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 builder.Services.AddScoped<ICatalogService, CatalogService>();
 builder.Services.AddScoped<IHomeService, HomeService>();
+builder.Services.AddScoped<IBranchService, BranchService>();
+builder.Services.AddScoped<IBusinessCustomerService, BusinessCustomerService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IReportingService, ReportingService>();
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
 builder.Services.AddScoped<AuditableEntitySaveChangesInterceptor>();
 
 builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>

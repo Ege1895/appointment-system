@@ -7,6 +7,9 @@ using AppointmentSystem.Api.Shared.Authentication;
 using AppointmentSystem.Api.Shared.Constants;
 using AppointmentSystem.Api.Shared.Database;
 using AppointmentSystem.Api.Shared.Exceptions;
+using AppointmentSystem.Api.Modules.BusinessModule.Services;
+using AppointmentSystem.Api.Shared.Notifications;
+using AppointmentSystem.Api.Shared.Notifications.Templates;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
@@ -17,15 +20,21 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IBusinessCustomerService _businessCustomerService;
+        private readonly IEmailService _emailService;
         private readonly ILogger<AppointmentService> _logger;
 
         public AppointmentService(
             ApplicationDbContext context,
             ICurrentUserService currentUserService,
+            IBusinessCustomerService businessCustomerService,
+            IEmailService emailService,
             ILogger<AppointmentService> logger)
         {
             _context = context;
             _currentUserService = currentUserService;
+            _businessCustomerService = businessCustomerService;
+            _emailService = emailService;
             _logger = logger;
         }
 
@@ -47,12 +56,54 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
                 throw new BusinessException(ErrorMessages.UNAUTHORIZED_ACCESS);
             }
 
+            bool isBlocked = await _businessCustomerService.IsBlockedAsync(request.BusinessId, userId);
+            if (isBlocked) 
+            {
+                throw new BusinessException(ErrorMessages.CUSTOMER_BLOCKED_BY_BUSINESS);
+            }
+
             Offering? offering = await _context.Offerings
                 .FirstOrDefaultAsync(s => s.Id == request.OfferingId && s.BusinessId == request.BusinessId && s.IsActive);
 
             if (offering == null)
             {
                 throw new NotFoundException(ErrorMessages.OFFERING_NOT_FOUND);
+            }
+
+            // Branch validation
+            if (request.BranchId.HasValue)
+            {
+                bool branchExists = await _context.Branches
+                    .AnyAsync(b => b.Id == request.BranchId.Value && b.BusinessId == request.BusinessId);
+
+                if (!branchExists)
+                {
+                    throw new NotFoundException(ErrorMessages.BRANCH_NOT_FOUND);
+                }
+
+                // Employee-Branch validation: Employee must be in the same branch OR unassigned (null branch)
+                bool employeeInBranch = await _context.Employees
+                    .AnyAsync(e => e.Id == request.EmployeeId && e.BusinessId == request.BusinessId 
+                                   && (e.BranchId == null || e.BranchId == request.BranchId.Value));
+
+                if (!employeeInBranch)
+                {
+                    // Personel bu şubede çalışmıyor (ve genel personel de değil)
+                    throw new BusinessException(ErrorMessages.EMPLOYEE_NOT_FOUND);
+                }
+            }
+
+            // Employee-Offering validation
+            bool hasAnyOffering = await _context.EmployeeOfferings.AnyAsync(eo => eo.EmployeeId == request.EmployeeId);
+            if (hasAnyOffering)
+            {
+                bool isAssigned = await _context.EmployeeOfferings
+                    .AnyAsync(eo => eo.EmployeeId == request.EmployeeId && eo.OfferingId == request.OfferingId);
+
+                if (!isAssigned)
+                {
+                    throw new BusinessException(ErrorMessages.EMPLOYEE_NOT_ASSIGNED_TO_OFFERING);
+                }
             }
 
             DateTime endTimeUtc = request.StartTimeUtc.AddMinutes(offering.DurationInMinutes);
@@ -76,6 +127,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
                     BusinessId = request.BusinessId,
                     EmployeeId = request.EmployeeId,
                     OfferingId = request.OfferingId,
+                    BranchId = request.BranchId,
                     UserId = userId,
                     StartTimeUtc = request.StartTimeUtc,
                     EndTimeUtc = endTimeUtc,
@@ -89,19 +141,8 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
 
                 _logger.LogInformation("Appointment created. AppointmentId: {AppointmentId}, UserId: {UserId}", appointment.Id, userId);
 
-                return new AppointmentResponseDto
-                {
-                    AppointmentId = appointment.Id,
-                    BusinessId = appointment.BusinessId,
-                    EmployeeId = appointment.EmployeeId,
-                    UserId = appointment.UserId,
-                    OfferingId = appointment.OfferingId,
-                    StartTimeUtc = appointment.StartTimeUtc,
-                    EndTimeUtc = appointment.EndTimeUtc,
-                    Status = appointment.Status,
-                    ActionTimeoutUtc = appointment.ActionTimeoutUtc,
-                    CreatedAt = appointment.CreatedAt
-                };
+                // Fetching again or manually mapping with name if needed, but for response we can use the entity
+                return MapToDto(appointment);
             }
             catch (DbUpdateException)
             {
@@ -147,6 +188,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
                 .Include(a => a.Employee)
                 .Include(a => a.User)
                 .Include(a => a.Offering)
+                .Include(a => a.Branch)
                 .Include(a => a.TransferredToEmployee)
                 .AsNoTracking()
                 .Where(a => a.UserId == userId
@@ -188,6 +230,9 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
 
             appointment.Status = AppointmentStatus.Cancelled;
             await _context.SaveChangesAsync();
+
+            // Notify Customer (Fire-and-forget)
+            _ = SendNotificationAsync(appointment, "AppointmentCancelled");
         }
 
         public async Task AcceptAsync(Guid appointmentId)
@@ -197,6 +242,9 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
             app.Status = AppointmentStatus.Confirmed;
             app.ActionTimeoutUtc = null;
             await _context.SaveChangesAsync();
+
+            // Notify Customer (Fire-and-forget)
+            _ = SendNotificationAsync(app, "AppointmentConfirmed");
         }
 
         public async Task DeclineAsync(Guid appointmentId)
@@ -206,6 +254,9 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
             app.Status = AppointmentStatus.Declined;
             app.ActionTimeoutUtc = null;
             await _context.SaveChangesAsync();
+
+            // Notify Customer (Fire-and-forget)
+            _ = SendNotificationAsync(app, "AppointmentDeclined");
         }
 
         public async Task TransferAsync(Guid appointmentId, Guid newEmployeeId)
@@ -270,6 +321,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
                 .Include(a => a.Employee)
                 .Include(a => a.User)
                 .Include(a => a.Offering)
+                .Include(a => a.Branch)
                 .Include(a => a.TransferredToEmployee)
                 .AsNoTracking();
 
@@ -336,6 +388,53 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
             return queryUserId.HasValue && queryUserId.Value == currentUserId;
         }
 
+        private async Task SendNotificationAsync(Appointment app, string type)
+        {
+            try
+            {
+                // Ensure relations are loaded
+                if (app.User == null || app.Business == null || app.Offering == null)
+                {
+                    app = await _context.Appointments
+                        .Include(a => a.User)
+                        .Include(a => a.Business)
+                        .Include(a => a.Offering)
+                        .FirstOrDefaultAsync(a => a.Id == app.Id) ?? app;
+                }
+
+                if (app.User == null) return;
+
+                string subject = string.Empty;
+                string body = string.Empty;
+                string dateStr = $"{app.StartTimeUtc:dd.MM.yyyy HH:mm}";
+
+                switch (type)
+                {
+                    case "AppointmentConfirmed":
+                        subject = EmailTemplates.Format(EmailTemplates.APPOINTMENT_CONFIRMED_SUBJECT, app.Business.CompanyName);
+                        body = EmailTemplates.Format(EmailTemplates.APPOINTMENT_CONFIRMED_BODY, app.User.FirstName, app.Business.CompanyName, app.Offering.Name, dateStr);
+                        break;
+                    case "AppointmentDeclined":
+                        subject = EmailTemplates.Format(EmailTemplates.APPOINTMENT_DECLINED_SUBJECT, app.Business.CompanyName);
+                        body = EmailTemplates.Format(EmailTemplates.APPOINTMENT_DECLINED_BODY, app.User.FirstName, app.Business.CompanyName, app.Offering.Name, dateStr);
+                        break;
+                    case "AppointmentCancelled":
+                        subject = EmailTemplates.Format(EmailTemplates.APPOINTMENT_CANCELLED_SUBJECT, app.Business.CompanyName);
+                        body = EmailTemplates.Format(EmailTemplates.APPOINTMENT_CANCELLED_BODY, app.User.FirstName, app.Business.CompanyName, app.Offering.Name, dateStr);
+                        break;
+                }
+
+                if (!string.IsNullOrEmpty(subject))
+                {
+                    await _emailService.SendAsync(app.User.Email, subject, body);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send transactional email for appointment {AppointmentId} type {Type}.", app.Id, type);
+            }
+        }
+
         private static AppointmentResponseDto MapToDto(Appointment a)
         {
             return new AppointmentResponseDto
@@ -349,6 +448,8 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
                 CustomerName = $"{a.User.FirstName} {a.User.LastName}",
                 OfferingId = a.OfferingId,
                 OfferingName = a.Offering.Name,
+                BranchId = a.BranchId,
+                BranchName = a.Branch?.IsDeleted == true ? "(Branch Deleted)" : a.Branch?.Name,
                 StartTimeUtc = a.StartTimeUtc,
                 EndTimeUtc = a.EndTimeUtc,
                 Status = a.Status,

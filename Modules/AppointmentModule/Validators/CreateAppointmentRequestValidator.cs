@@ -20,6 +20,9 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Validators
             RuleFor(x => x.StartTimeUtc)
                 .NotEmpty().WithMessage(ValidationConstants.REQUIRED)
                 .GreaterThan(DateTime.UtcNow).WithMessage(ValidationConstants.MUST_BE_FUTURE);
+
+            RuleFor(x => x.BranchId)
+                .Must(x => x == null || x != Guid.Empty).WithMessage(ValidationConstants.INVALID_GUID);
         }
     }
 }

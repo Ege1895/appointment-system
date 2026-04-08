@@ -26,7 +26,7 @@ namespace AppointmentSystem.Api.Modules.EmployeeModule.Controllers
         public async Task<IActionResult> CreateEmployee([FromBody] CreateEmployeeRequest request)
         {
             EmployeeResponseDto response = await _employeeService.CreateEmployeeAsync(request);
-            return Ok(response);
+            return Ok(ApiResponse<EmployeeResponseDto>.SuccessResponse(response));
         }
 
         [HttpPost("bulk")]
@@ -34,7 +34,7 @@ namespace AppointmentSystem.Api.Modules.EmployeeModule.Controllers
         {
             // Handles multiple employee creations efficiently using EF Core AddRangeAsync
             IEnumerable<EmployeeResponseDto> response = await _employeeService.CreateEmployeesAsync(requests);
-            return Ok(response);
+            return Ok(ApiResponse<IEnumerable<EmployeeResponseDto>>.SuccessResponse(response));
         }
 
         [HttpGet]
@@ -47,6 +47,42 @@ namespace AppointmentSystem.Api.Modules.EmployeeModule.Controllers
             PaginationMeta meta = PaginationMeta.Create(query.Page, query.PageSize, totalCount);
 
             return Ok(ApiResponse<IEnumerable<EmployeeResponseDto>>.SuccessResponse(employees, meta));
+        }
+
+        [HttpPost("{id:guid}/branch")]
+        public async Task<IActionResult> AssignBranch(Guid id, [FromBody] AssignEmployeeToBranchRequest request)
+        {
+            await _employeeService.AssignBranchAsync(id, request.BranchId);
+            return Ok(ApiResponse<object>.SuccessResponse(null!));
+        }
+
+        [HttpGet("branch/{branchId:guid}")]
+        public async Task<IActionResult> GetByBranch(Guid branchId)
+        {
+            IEnumerable<EmployeeResponseDto> employees = await _employeeService.GetByBranchAsync(branchId);
+            return Ok(ApiResponse<IEnumerable<EmployeeResponseDto>>.SuccessResponse(employees));
+        }
+
+        [HttpPut("{id:guid}/offerings")]
+        public async Task<IActionResult> SetOfferings(Guid id, [FromBody] AssignOfferingsRequest request)
+        {
+            await _employeeService.SetOfferingsAsync(id, request.OfferingIds);
+            return Ok(ApiResponse<object>.SuccessResponse(null!));
+        }
+
+        [HttpGet("{id:guid}/offerings")]
+        public async Task<IActionResult> GetOfferings(Guid id)
+        {
+            List<EmployeeOfferingResponseDto> response = await _employeeService.GetOfferingsAsync(id);
+            return Ok(ApiResponse<List<EmployeeOfferingResponseDto>>.SuccessResponse(response));
+        }
+
+        [HttpGet("/api/v1/businesses/{businessId:guid}/offerings/{offeringId:guid}/employees")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPublicEmployeesByOffering(Guid businessId, Guid offeringId)
+        {
+            IEnumerable<EmployeeResponseDto> response = await _employeeService.GetByOfferingAsync(businessId, offeringId);
+            return Ok(ApiResponse<IEnumerable<EmployeeResponseDto>>.SuccessResponse(response));
         }
     }
 }

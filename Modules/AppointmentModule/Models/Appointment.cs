@@ -1,5 +1,6 @@
 using AppointmentSystem.Api.Modules.AppointmentModule.Enums;
 using AppointmentSystem.Api.Modules.BusinessModule.Models;
+using AppointmentSystem.Api.Modules.BranchModule.Models;
 using AppointmentSystem.Api.Modules.EmployeeModule.Models;
 using AppointmentSystem.Api.Modules.OfferingModule.Models;
 using AppointmentSystem.Api.Modules.UserModule.Models;
@@ -22,6 +23,9 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Models
         public Guid OfferingId { get; set; }
         public Offering Offering { get; set; } = null!;
 
+        public Guid? BranchId { get; set; }
+        public virtual Branch? Branch { get; set; }
+
         public DateTime StartTimeUtc { get; set; }
         public DateTime EndTimeUtc { get; set; }
 
@@ -38,5 +42,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Models
         public bool IsRescheduleRequested { get; set; }
         public DateTime? ProposedRescheduleDateUtc { get; set; }
         public DateTime? RescheduleTimeoutUtc { get; set; }
+
+        public DateTime? ReminderSentAt { get; set; }
     }
 }

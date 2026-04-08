@@ -21,14 +21,29 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
             _cacheService = cacheService;
         }
 
-        public async Task<List<TimeSpan>> GetAvailableSlotsAsync(Guid employeeId, DateTime date, Guid offeringId)
+        public async Task<List<TimeSpan>> GetAvailableSlotsAsync(Guid employeeId, DateTime date, Guid offeringId, Guid? branchId = null)
         {
-            string cacheKey = string.Format(CacheKeys.AVAILABILITY_SLOTS, employeeId, date.ToString("yyyyMMdd"), offeringId);
+            string cacheKey = string.Format(CacheKeys.AVAILABILITY_SLOTS, employeeId, date.ToString("yyyyMMdd"), offeringId, branchId?.ToString() ?? "none");
 
             List<TimeSpan>? cached = await _cacheService.GetAsync<List<TimeSpan>>(cacheKey);
             if (cached != null)
             {
                 return cached;
+            }
+
+            // Employee exists and belongs to branch (if provided)
+            var employeeQuery = _context.Employees.AsNoTracking().Where(e => e.Id == employeeId);
+            if (branchId.HasValue)
+            {
+                // Unassigned employees can work in any branch. Assigned ones must match the branchId.
+                employeeQuery = employeeQuery.Where(e => e.BranchId == null || e.BranchId == branchId.Value);
+            }
+
+            bool employeeValid = await employeeQuery.AnyAsync();
+            if (!employeeValid)
+            {
+                // If branchId was provided and employee doesn't match/exist, return empty list
+                return new List<TimeSpan>();
             }
 
             Offering? offering = await _context.Offerings.AsNoTracking().FirstOrDefaultAsync(s => s.Id == offeringId);

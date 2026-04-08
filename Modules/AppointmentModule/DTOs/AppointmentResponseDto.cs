@@ -19,6 +19,9 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.DTOs
         
         public DateTime StartTimeUtc { get; set; }
         public DateTime EndTimeUtc { get; set; }
+
+        public Guid? BranchId { get; set; }
+        public string? BranchName { get; set; }
         
         public AppointmentStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }

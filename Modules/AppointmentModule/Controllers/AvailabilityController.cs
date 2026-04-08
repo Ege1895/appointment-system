@@ -15,10 +15,14 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Controllers
             _availabilityService = availabilityService;
         }
 
-        [HttpGet("employee/{employeeId}")]
-        public async Task<IActionResult> GetAvailableSlots(Guid employeeId, [FromQuery] DateTime date, [FromQuery] Guid offeringId)
+        [HttpGet("employee/{employeeId:guid}")]
+        public async Task<IActionResult> GetAvailableSlots(
+            Guid employeeId, 
+            [FromQuery] DateTime date, 
+            [FromQuery] Guid offeringId,
+            [FromQuery] Guid? branchId = null)
         {
-            List<TimeSpan> slots = await _availabilityService.GetAvailableSlotsAsync(employeeId, date, offeringId);
+            List<TimeSpan> slots = await _availabilityService.GetAvailableSlotsAsync(employeeId, date, offeringId, branchId);
             return Ok(ApiResponse<List<string>>.SuccessResponse(slots.Select(s => s.ToString(@"hh\:mm")).ToList()));
         }
     }
