@@ -46,5 +46,30 @@ namespace AppointmentSystem.Api.Modules.ReportingModule.Controllers
                     ApiResponse<object>.FailureResponse("Rapor oluşturulurken bir hata oluştu: " + ex.Message));
             }
         }
+
+        [HttpGet("revenue")]
+        [ProducesResponseType(typeof(ApiResponse<RevenueReportResponseDto>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), (int)HttpStatusCode.BadRequest)]
+        public async Task<IActionResult> GetRevenueReport([FromQuery] RevenueReportRequest request)
+        {
+            try
+            {
+                var report = await _reportingService.GetRevenueReportAsync(request);
+                return Ok(ApiResponse<RevenueReportResponseDto>.SuccessResponse(report));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResponse<object>.FailureResponse(ex.Message));
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode((int)HttpStatusCode.InternalServerError,
+                    ApiResponse<object>.FailureResponse("Gelir raporu oluşturulurken bir hata oluştu: " + ex.Message));
+            }
+        }
     }
 }

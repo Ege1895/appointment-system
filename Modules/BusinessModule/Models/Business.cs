@@ -42,7 +42,8 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Models
         public bool KvkkAccepted { get; set; }
         public bool PrivacyPolicyAccepted { get; set; }
         public DateTime? AcceptedAt { get; set; }
-        public string? KvkkVersion { get; set; }
         public string? PrivacyVersion { get; set; }
+
+        public string CurrencyCode { get; set; } = AppointmentSystem.Api.Shared.Constants.BusinessRules.DEFAULT_CURRENCY;
     }
 }

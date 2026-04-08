@@ -175,6 +175,191 @@ namespace AppointmentSystem.Api.Modules.ReportingModule.Services
             };
         }
 
+        public async Task<RevenueReportResponseDto> GetRevenueReportAsync(RevenueReportRequest request)
+        {
+            Guid businessId = _currentUserService.TenantId ?? throw new UnauthorizedAccessException();
+
+            // 1. Validasyon (Ortak validasyon mantığı kullanılabilir)
+            ValidateRevenueRequest(request);
+
+            // 2. Cache Kontrolü
+            string cacheKey = string.Format("report:revenue:{0}:{1}:{2:yyyyMMdd}:{3:yyyyMMdd}:{4}",
+                businessId, request.Period, request.StartDate, request.EndDate, request.BranchId ?? Guid.Empty);
+
+            RevenueReportResponseDto? cachedData = await _cacheService.GetAsync<RevenueReportResponseDto>(cacheKey);
+            if (cachedData != null)
+            {
+                return cachedData;
+            }
+
+            // 3. İşletme bilgilerini al (Para birimi için)
+            var business = await _context.Businesses
+                .Where(b => b.Id == businessId)
+                .Select(b => new { b.CurrencyCode })
+                .FirstOrDefaultAsync();
+
+            string currencyCode = business?.CurrencyCode ?? AppointmentSystem.Api.Shared.Constants.BusinessRules.DEFAULT_CURRENCY;
+
+            // 4. Bucket'ları oluştur
+            List<RevenueBucketDto> buckets = GenerateRevenueBuckets(request.Period, request.StartDate, request.EndDate);
+
+            // 5. Veritabanından veriyi çek
+            var query = _context.Appointments
+                .Include(a => a.Offering)
+                .Where(a => a.BusinessId == businessId &&
+                            a.StartTimeUtc >= request.StartDate &&
+                            a.StartTimeUtc <= request.EndDate &&
+                            a.Status == AppointmentStatus.Completed &&
+                            !a.IsDeleted);
+
+            if (request.BranchId.HasValue)
+            {
+                query = query.Where(a => a.BranchId == request.BranchId.Value);
+            }
+
+            // Fiyatlandırma tipi Fixed olanları filtrele (Free veya Variable olanları hesaplamaya katmıyoruz)
+            var rawData = await query
+                .Select(a => new
+                {
+                    a.StartTimeUtc,
+                    a.OfferingId,
+                    OfferingName = a.Offering.Name,
+                    a.Offering.PriceType,
+                    // Deesign Decision: PriceAtBooking varsa onu kullan, yoksa güncel offering fiyatını kullan
+                    Price = a.PriceAtBooking ?? (a.Offering.Price ?? 0)
+                })
+                .Where(x => x.PriceType == OfferingModule.Enums.PriceType.Fixed)
+                .ToListAsync();
+
+            // 6. Verileri işle
+            List<RevenueByServiceDto> serviceStats = new List<RevenueByServiceDto>();
+
+            foreach (var item in rawData)
+            {
+                // Bucket güncelleme
+                RevenueBucketDto? bucket = FindRevenueBucket(buckets, request.Period, item.StartTimeUtc);
+                if (bucket != null)
+                {
+                    bucket.TotalRevenue += item.Price;
+                    bucket.AppointmentCount++;
+                }
+
+                // Servis istatistiği güncelleme
+                RevenueByServiceDto? sStat = serviceStats.FirstOrDefault(s => s.OfferingId == item.OfferingId);
+                if (sStat == null)
+                {
+                    sStat = new RevenueByServiceDto
+                    {
+                        OfferingId = item.OfferingId,
+                        OfferingName = item.OfferingName,
+                        TotalRevenue = 0,
+                        CompletedCount = 0
+                    };
+                    serviceStats.Add(sStat);
+                }
+                sStat.TotalRevenue += item.Price;
+                sStat.CompletedCount++;
+            }
+
+            // Sonuçları hazırla
+            RevenueReportResponseDto response = new RevenueReportResponseDto
+            {
+                TotalRevenue = buckets.Sum(b => b.TotalRevenue),
+                TotalCompletedAppointments = buckets.Sum(b => b.AppointmentCount),
+                CurrencyCode = currencyCode,
+                Buckets = buckets,
+                TopServices = serviceStats.OrderByDescending(s => s.TotalRevenue).Take(10).ToList(),
+                HasPricedOfferings = await _context.Offerings.AnyAsync(o => o.BusinessId == businessId && o.PriceType == OfferingModule.Enums.PriceType.Fixed && !o.IsDeleted)
+            };
+
+            // 7. Önbelleğe al (15 dakika)
+            await _cacheService.SetAsync(cacheKey, response, TimeSpan.FromMinutes(15));
+
+            return response;
+        }
+
+        private void ValidateRevenueRequest(RevenueReportRequest request)
+        {
+            if (request.StartDate >= request.EndDate)
+                throw new ArgumentException("Başlangıç tarihi bitiş tarihinden önce olmalıdır.");
+
+            TimeSpan diff = request.EndDate - request.StartDate;
+
+            switch (request.Period)
+            {
+                case ReportPeriod.Daily:
+                    if (diff.TotalDays > 90) throw new ArgumentException("Günlük rapor için maksimum 90 gün seçilebilir.");
+                    break;
+                case ReportPeriod.Weekly:
+                    if (diff.TotalDays > 366) throw new ArgumentException("Haftalık rapor için maksimum 1 yıl seçilebilir.");
+                    break;
+                case ReportPeriod.Monthly:
+                    if (diff.TotalDays > 31 * 24) throw new ArgumentException("Aylık rapor için maksimum 2 yıl seçilebilir.");
+                    break;
+                case ReportPeriod.Yearly:
+                    if (diff.TotalDays > 365 * 5 + 2) throw new ArgumentException("Yıllık rapor için maksimum 5 yıl seçilebilir.");
+                    break;
+            }
+        }
+
+        private List<RevenueBucketDto> GenerateRevenueBuckets(ReportPeriod period, DateTime start, DateTime end)
+        {
+            List<RevenueBucketDto> result = new List<RevenueBucketDto>();
+            DateTime current = start;
+
+            current = period switch
+            {
+                ReportPeriod.Daily => current.Date,
+                ReportPeriod.Weekly => GetStartOfWeek(current),
+                ReportPeriod.Monthly => new DateTime(current.Year, current.Month, 1),
+                ReportPeriod.Yearly => new DateTime(current.Year, 1, 1),
+                _ => current
+            };
+
+            while (current <= end)
+            {
+                string label = period switch
+                {
+                    ReportPeriod.Daily => current.ToString("yyyy-MM-dd"),
+                    ReportPeriod.Weekly => string.Format("{0}-W{1:D2}", current.Year, GetIsoWeekOfYear(current)),
+                    ReportPeriod.Monthly => current.ToString("yyyy-MM"),
+                    ReportPeriod.Yearly => current.ToString("yyyy"),
+                    _ => current.ToString()
+                };
+
+                result.Add(new RevenueBucketDto
+                {
+                    PeriodLabel = label,
+                    PeriodStart = current,
+                    TotalRevenue = 0,
+                    AppointmentCount = 0
+                });
+
+                current = period switch
+                {
+                    ReportPeriod.Daily => current.AddDays(1),
+                    ReportPeriod.Weekly => current.AddDays(7),
+                    ReportPeriod.Monthly => current.AddMonths(1),
+                    ReportPeriod.Yearly => current.AddYears(1),
+                    _ => current.AddDays(1)
+                };
+            }
+
+            return result;
+        }
+
+        private RevenueBucketDto? FindRevenueBucket(List<RevenueBucketDto> buckets, ReportPeriod period, DateTime date)
+        {
+            return period switch
+            {
+                ReportPeriod.Daily => buckets.FirstOrDefault(b => b.PeriodStart.Date == date.Date),
+                ReportPeriod.Weekly => buckets.FirstOrDefault(b => b.PeriodStart <= date && date < b.PeriodStart.AddDays(7)),
+                ReportPeriod.Monthly => buckets.FirstOrDefault(b => b.PeriodStart.Year == date.Year && b.PeriodStart.Month == date.Month),
+                ReportPeriod.Yearly => buckets.FirstOrDefault(b => b.PeriodStart.Year == date.Year),
+                _ => null
+            };
+        }
+
         private DateTime GetStartOfWeek(DateTime dt)
         {
             int diff = (7 + (dt.DayOfWeek - DayOfWeek.Monday)) % 7;

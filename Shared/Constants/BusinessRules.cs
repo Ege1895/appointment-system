@@ -69,5 +69,9 @@ namespace AppointmentSystem.Api.Shared.Constants
         // Appointment Notes
         public const int MAX_NOTE_CONTENT_LENGTH = 2000;
         public const int MAX_NOTES_PER_APPOINTMENT = 20;
+
+        // Localization & Currency
+        public const string DEFAULT_CURRENCY = "TRY";
+        public const int MAX_CURRENCY_CODE_LENGTH = 3;
     }
 }
