@@ -6,5 +6,8 @@ namespace AppointmentSystem.Api.Modules.ReportingModule.Services
     public interface IReportingService
     {
         Task<AppointmentCountReportResponseDto> GetAppointmentCountReportAsync(AppointmentCountReportRequest request);
+        Task<RevenueReportResponseDto> GetRevenueReportAsync(RevenueReportRequest request);
+        Task<BranchStatsReportResponseDto> GetBranchStatsAsync(BranchStatsRequest request);
+        Task<PopularServicesResponseDto> GetPopularServicesAsync(PopularServicesRequest request);
     }
 }

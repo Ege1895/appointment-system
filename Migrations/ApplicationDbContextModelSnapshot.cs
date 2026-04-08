@@ -62,6 +62,9 @@ namespace AppointmentSystem.Api.Migrations
                     b.Property<Guid>("OfferingId")
                         .HasColumnType("uuid");
 
+                    b.Property<decimal?>("PriceAtBooking")
+                        .HasColumnType("numeric");
+
                     b.Property<DateTime?>("ProposedRescheduleDateUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -338,6 +341,10 @@ namespace AppointmentSystem.Api.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
 
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Description")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
@@ -365,6 +372,9 @@ namespace AppointmentSystem.Api.Migrations
                         .HasDefaultValue(true);
 
                     b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsEmailVerified")
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsOpen")
@@ -963,6 +973,57 @@ namespace AppointmentSystem.Api.Migrations
                         .HasFilter("\"IsDeleted\" = false");
 
                     b.ToTable("EmployeeWorkingHours", (string)null);
+                });
+
+            modelBuilder.Entity("AppointmentSystem.Api.Shared.Models.EmailVerification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("ExpiryDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("RowVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EmailVerifications");
                 });
 
             modelBuilder.Entity("AppointmentSystem.Api.Modules.AppointmentModule.Models.Appointment", b =>

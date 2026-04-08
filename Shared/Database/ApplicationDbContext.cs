@@ -1,3 +1,4 @@
+using AppointmentSystem.Api.Shared.Models;
 using AppointmentSystem.Api.Modules.BusinessModule.Models;
 using AppointmentSystem.Api.Modules.EmployeeModule.Models;
 using AppointmentSystem.Api.Modules.UserModule.Models;
@@ -37,6 +38,7 @@ namespace AppointmentSystem.Api.Shared.Database
         public DbSet<AppointmentMessage> AppointmentMessages { get; set; }
         public DbSet<BusinessCustomerBlock> BusinessCustomerBlocks { get; set; }
         public DbSet<BusinessCustomerEmailLog> BusinessCustomerEmailLogs { get; set; }
+        public DbSet<EmailVerification> EmailVerifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -47,6 +49,7 @@ namespace AppointmentSystem.Api.Shared.Database
             // Soft-delete only (Global)
             modelBuilder.Entity<Business>().HasQueryFilter(b => !b.IsDeleted);
             modelBuilder.Entity<User>().HasQueryFilter(u => !u.IsDeleted);
+            modelBuilder.Entity<EmailVerification>().HasQueryFilter(ev => !ev.IsDeleted);
 
             // Multi-Tenant Isolation + Soft-delete
             modelBuilder.Entity<Employee>().HasQueryFilter(e => !e.IsDeleted && 

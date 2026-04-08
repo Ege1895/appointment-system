@@ -69,5 +69,15 @@ namespace AppointmentSystem.Api.Shared.Constants
         // Appointment Notes
         public const int MAX_NOTE_CONTENT_LENGTH = 2000;
         public const int MAX_NOTES_PER_APPOINTMENT = 20;
+
+        // Localization & Currency
+        public const string DEFAULT_CURRENCY = "TRY";
+        public const int MAX_CURRENCY_CODE_LENGTH = 3;
+        // Business Account
+        public const string BUSINESS_CLOSED_APPOINTMENT_NOTE = "İşletme hesabı kapatıldı.";
+        public const string DELETED_EMAIL_SUFFIX = "@deleted.invalid";
+        public const string DELETED_FIRST_NAME = "Deleted";
+        public const string DELETED_LAST_NAME = "Account";
+        public const int ACCOUNT_DELETE_RATE_LIMIT_HOURS = 24;
     }
 }

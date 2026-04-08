@@ -65,6 +65,14 @@ builder.Services.AddRateLimiter(options =>
         opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
         opt.QueueLimit = 0;
     });
+
+    options.AddFixedWindowLimiter(RateLimitingPolicies.EXPORT_POLICY, opt =>
+    {
+        opt.PermitLimit = 10;
+        opt.Window = TimeSpan.FromHours(1);
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
 });
 
 builder.Services.AddCors(options =>
@@ -142,6 +150,7 @@ builder.Services.AddScoped<IBranchService, BranchService>();
 builder.Services.AddScoped<IBusinessCustomerService, BusinessCustomerService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IReportingService, ReportingService>();
+builder.Services.AddScoped<IExportService, ExportService>();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
 builder.Services.AddScoped<AuditableEntitySaveChangesInterceptor>();
 
@@ -217,12 +226,10 @@ using (IServiceScope scope = app.Services.CreateScope())
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseForwardedHeaders();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-else
+app.UseSwagger();
+app.UseSwaggerUI();
+
+if (!app.Environment.IsDevelopment())
 {
     app.UseHsts();
 }

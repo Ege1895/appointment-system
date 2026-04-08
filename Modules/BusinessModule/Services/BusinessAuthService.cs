@@ -6,6 +6,8 @@ using AppointmentSystem.Api.Shared.Constants;
 using AppointmentSystem.Api.Shared.Database;
 using AppointmentSystem.Api.Shared.Exceptions;
 using AppointmentSystem.Api.Shared.Requests;
+using AppointmentSystem.Api.Shared.Models;
+using AppointmentSystem.Api.Shared.Notifications;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -18,17 +20,20 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
         private readonly ApplicationDbContext _context;
         private readonly JwtTokenGenerator _jwtTokenGenerator;
         private readonly JwtSettings _jwtSettings;
+        private readonly IEmailService _emailService;
         private readonly ILogger<BusinessAuthService> _logger;
 
         public BusinessAuthService(
             ApplicationDbContext context,
             JwtTokenGenerator jwtTokenGenerator,
             IOptions<JwtSettings> jwtOptions,
+            IEmailService emailService,
             ILogger<BusinessAuthService> logger)
         {
             _context = context;
             _jwtTokenGenerator = jwtTokenGenerator;
             _jwtSettings = jwtOptions.Value;
+            _emailService = emailService;
             _logger = logger;
         }
 
@@ -38,9 +43,8 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
             _logger.LogDebug("Starting business registration for email: {Email}, Subdomain: {Subdomain}", normalizedEmail, request.Subdomain);
 
             bool existsAsBusiness = await _context.Businesses.AnyAsync(b => b.Email == normalizedEmail || b.Subdomain == request.Subdomain);
-            bool existsAsUser = await _context.Users.AnyAsync(u => u.Email == normalizedEmail);
             
-            if (existsAsBusiness || existsAsUser)
+            if (existsAsBusiness)
             {
                 _logger.LogWarning("Business registration failed — email or subdomain already exists. Email: {Email}, Subdomain: {Subdomain}", normalizedEmail, request.Subdomain);
                 throw new BusinessException(ErrorMessages.EMAIL_ALREADY_EXISTS);
@@ -85,6 +89,7 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
                     PrivacyVersion = ValidationConstants.LATEST_PRIVACY_POLICY_VERSION,
                     CreatedAt = DateTime.UtcNow,
                     IsActive = true,
+                    IsEmailVerified = true,
                     RefreshTokenHash = TokenGenerator.HashToken(refreshToken, _jwtSettings.SecretKey),
                     RefreshTokenExpiry = DateTime.UtcNow.AddDays(BusinessRules.REFRESH_TOKEN_EXPIRY_DAYS),
                     RefreshTokenUsed = false
@@ -94,12 +99,36 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
                 _logger.LogDebug("Saving business to database. BusinessId: {BusinessId}", businessId);
                 await _context.SaveChangesAsync();
 
-                _logger.LogDebug("Generating JWT token for business.");
-                string token = _jwtTokenGenerator.GenerateToken(businessId, normalizedEmail, Roles.Business.ToString());
-
                 await transaction.CommitAsync();
 
-                _logger.LogInformation("Business registered successfully. BusinessId: {BusinessId}", business.Id);
+                // 2. OTP Üret ve Kaydet
+                string otpCode = TokenGenerator.GenerateOTP();
+                string codeHash = TokenGenerator.HashToken(otpCode, _jwtSettings.SecretKey);
+
+                EmailVerification verification = new EmailVerification
+                {
+                    Email = normalizedEmail,
+                    CodeHash = codeHash,
+                    Purpose = "BusinessRegistration",
+                    ExpiryDate = DateTime.UtcNow.AddMinutes(15),
+                    IsActive = true
+                };
+
+                await _context.EmailVerifications.AddAsync(verification);
+                await _context.SaveChangesAsync();
+
+                // 3. E-posta Gönder
+                string emailBody = $@"
+                    <h1>Hoş Geldiniz!</h1>
+                    <p>İşletme kaydınızı tamamlamak için lütfen aşağıdaki doğrulama kodunu kullanın:</p>
+                    <h2 style='color: #4CAF50; letter-spacing: 5px;'>{otpCode}</h2>
+                    <p>Bu kod 15 dakika boyunca geçerlidir.</p>";
+
+                await _emailService.SendAsync(normalizedEmail, "E-posta Doğrulama Kodu", emailBody);
+
+                _logger.LogInformation("Business registered. Verification email sent to {Email}. CODE (Only for Dev): {OTP}", normalizedEmail, otpCode);
+
+                string token = _jwtTokenGenerator.GenerateToken(business.Id, normalizedEmail, Roles.Business.ToString());
 
                 return new BusinessAuthResponseDto
                 {
@@ -134,6 +163,11 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
             {
                 _logger.LogWarning("Business login failed — invalid password. BusinessId: {BusinessId}", business.Id);
                 throw new BusinessException(ErrorMessages.INVALID_EMAIL_OR_PASSWORD);
+            }
+
+            if (!business.IsEmailVerified)
+            {
+                throw new BusinessException("E-posta adresi doğrulanmamış. Lütfen e-postanıza gönderilen kodu girin.");
             }
 
             string token = _jwtTokenGenerator.GenerateToken(business.Id, business.Email, Roles.Business.ToString());
@@ -217,6 +251,89 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
                 await _context.SaveChangesAsync();
                 _logger.LogInformation("Business logged out. BusinessId: {BusinessId}", businessId);
             }
+        }
+
+        public async Task<bool> VerifyBusinessEmailAsync(VerifyEmailRequest request)
+        {
+            string normalizedEmail = request.Email.Trim().ToLowerInvariant();
+            string codeHash = TokenGenerator.HashToken(request.Code, _jwtSettings.SecretKey);
+
+            EmailVerification? verification = await _context.EmailVerifications
+                .Where(v => v.Email == normalizedEmail && v.IsActive && !v.IsDeleted)
+                .OrderByDescending(v => v.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            if (verification == null)
+            {
+                throw new BusinessException("Doğrulama kodu bulunamadı.");
+            }
+
+            if (verification.ExpiryDate < DateTime.UtcNow)
+            {
+                throw new BusinessException("Doğrulama kodunun süresi dolmuş.");
+            }
+
+            if (verification.CodeHash != codeHash)
+            {
+                verification.AttemptCount++;
+                if (verification.AttemptCount >= 5)
+                {
+                    verification.IsActive = false;
+                }
+                await _context.SaveChangesAsync();
+                throw new BusinessException("Hatalı doğrulama kodu.");
+            }
+
+            // Doğrulama başarılı
+            Business? business = await _context.Businesses
+                .FirstOrDefaultAsync(b => b.Email == normalizedEmail);
+
+            if (business != null)
+            {
+                business.IsEmailVerified = true;
+                verification.IsActive = false;
+                await _context.SaveChangesAsync();
+                return true;
+            }
+
+            return false;
+        }
+
+        public async Task ResendBusinessVerificationCodeAsync(string email)
+        {
+            string normalizedEmail = email.Trim().ToLowerInvariant();
+
+            // Son 1 dakika içinde kod istenmiş mi kontrol et (Rate limit)
+            bool recentlySent = await _context.EmailVerifications
+                .AnyAsync(v => v.Email == normalizedEmail && v.CreatedAt > DateTime.UtcNow.AddMinutes(-1));
+
+            if (recentlySent)
+            {
+                throw new BusinessException("Çok sık kod talebi gönderiyorsunuz. Lütfen 1 dakika sonra tekrar deneyin.");
+            }
+
+            string otpCode = TokenGenerator.GenerateOTP();
+            string codeHash = TokenGenerator.HashToken(otpCode, _jwtSettings.SecretKey);
+
+            EmailVerification verification = new EmailVerification
+            {
+                Email = normalizedEmail,
+                CodeHash = codeHash,
+                Purpose = "BusinessRegistration",
+                ExpiryDate = DateTime.UtcNow.AddMinutes(15),
+                IsActive = true
+            };
+
+            await _context.EmailVerifications.AddAsync(verification);
+            await _context.SaveChangesAsync();
+
+            string emailBody = $@"
+                <h1>Yeni Doğrulama Kodunuz</h1>
+                <p>Kayıt işlemini tamamlamak için aşağıdaki yeni kodu kullanabilirsiniz:</p>
+                <h2 style='color: #4CAF50; letter-spacing: 5px;'>{otpCode}</h2>
+                <p>Bu kod 15 dakika boyunca geçerlidir.</p>";
+
+            await _emailService.SendAsync(normalizedEmail, "Yeni Doğrulama Kodu", emailBody);
         }
 
         private BusinessResponseDto MapToResponse(Business business)

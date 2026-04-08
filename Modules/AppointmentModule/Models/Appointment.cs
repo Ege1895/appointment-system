@@ -44,5 +44,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Models
         public DateTime? RescheduleTimeoutUtc { get; set; }
 
         public DateTime? ReminderSentAt { get; set; }
+
+        public decimal? PriceAtBooking { get; set; }
     }
 }
