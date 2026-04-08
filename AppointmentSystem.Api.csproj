@@ -31,4 +31,11 @@
     <Folder Include="Data\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="AppointmentSystem.Tests\**" />
+    <Content Remove="AppointmentSystem.Tests\**" />
+    <EmbeddedResource Remove="AppointmentSystem.Tests\**" />
+    <None Remove="AppointmentSystem.Tests\**" />
+  </ItemGroup>
+
 </Project>

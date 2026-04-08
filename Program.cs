@@ -226,12 +226,10 @@ using (IServiceScope scope = app.Services.CreateScope())
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseForwardedHeaders();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-else
+app.UseSwagger();
+app.UseSwaggerUI();
+
+if (!app.Environment.IsDevelopment())
 {
     app.UseHsts();
 }

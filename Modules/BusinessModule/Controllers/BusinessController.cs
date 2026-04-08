@@ -56,7 +56,7 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Controllers
         {
             await _businessService.DeleteAccountAsync(request);
             
-            return Ok(ApiResponse<object>.SuccessResponse(null!, "Hesap başarıyla silindi."));
+            return Ok(ApiResponse<object>.SuccessResponse(null!));
         }
     }
 }

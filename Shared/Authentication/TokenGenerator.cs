@@ -20,5 +20,10 @@ namespace AppointmentSystem.Api.Shared.Authentication
             byte[] hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(token));
             return Convert.ToBase64String(hash);
         }
+
+        public static string GenerateOTP()
+        {
+            return RandomNumberGenerator.GetInt32(100000, 999999).ToString();
+        }
     }
 }

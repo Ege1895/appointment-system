@@ -408,12 +408,12 @@ namespace AppointmentSystem.Api.Modules.ReportingModule.Services
             // Mevcut (veya silinmiş) tüm şubeler için istatistikleri oluştur
             foreach (var branch in allBranches)
             {
-                var branchApps = appointments.Where(a => a.BranchId == branch.Id).ToList();
+                var branchApps = appointments.Where(a => a.BranchId == branch.Id).Select(a => (dynamic)a).ToList();
                 branchStats.Add(MapToBranchStatDto(branch.Id, branch.Name, branch.IsMain, branchApps));
             }
 
             // Atanmamış (Unassigned) randevular varsa ekle
-            var unassignedApps = appointments.Where(a => a.BranchId == null).ToList();
+            var unassignedApps = appointments.Where(a => a.BranchId == null).Select(a => (dynamic)a).ToList();
             if (unassignedApps.Any())
             {
                 branchStats.Add(MapToBranchStatDto(null, "Unassigned", false, unassignedApps));

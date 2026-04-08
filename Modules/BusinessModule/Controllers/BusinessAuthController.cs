@@ -44,6 +44,24 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Controllers
             return Ok(ApiResponse<BusinessAuthResponseDto>.SuccessResponse(response));
         }
 
+        [HttpPost("verify-email")]
+        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailRequest request)
+        {
+            bool success = await _businessAuthService.VerifyBusinessEmailAsync(request);
+            if (success)
+            {
+                return Ok(ApiResponse<string>.SuccessResponse("E-posta adresi başarıyla doğrulandı."));
+            }
+            return BadRequest(ApiResponse<string>.FailureResponse("Doğrulama başarısız oldu."));
+        }
+
+        [HttpPost("resend-code")]
+        public async Task<IActionResult> ResendCode([FromBody] string email)
+        {
+            await _businessAuthService.ResendBusinessVerificationCodeAsync(email);
+            return Ok(ApiResponse<string>.SuccessResponse("Yeni doğrulama kodu e-posta adresinize gönderildi."));
+        }
+
         [Authorize(Roles = nameof(Roles.Business))]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()

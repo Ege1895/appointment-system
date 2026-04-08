@@ -9,5 +9,7 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
         Task<BusinessAuthResponseDto> LoginAsync(LoginBusinessRequest request);
         Task<BusinessAuthResponseDto> RefreshTokenAsync(RefreshTokenRequest request);
         Task LogoutAsync(Guid businessId);
+        Task<bool> VerifyBusinessEmailAsync(VerifyEmailRequest request);
+        Task ResendBusinessVerificationCodeAsync(string email);
     }
 }
