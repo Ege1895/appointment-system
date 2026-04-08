@@ -37,9 +37,8 @@ namespace AppointmentSystem.Api.Modules.UserModule.Services
             _logger.LogDebug("Starting user registration for email: {Email}", normalizedEmail);
 
             bool emailExistsAsUser = await _context.Users.AnyAsync(u => u.Email == normalizedEmail);
-            bool emailExistsAsBusiness = await _context.Businesses.AnyAsync(b => b.Email == normalizedEmail);
             
-            if (emailExistsAsUser || emailExistsAsBusiness)
+            if (emailExistsAsUser)
             {
                 _logger.LogWarning("User registration failed — email already exists. Email: {Email}", normalizedEmail);
                 throw new BusinessException(ErrorMessages.EMAIL_ALREADY_EXISTS);

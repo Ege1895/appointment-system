@@ -43,9 +43,8 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
             _logger.LogDebug("Starting business registration for email: {Email}, Subdomain: {Subdomain}", normalizedEmail, request.Subdomain);
 
             bool existsAsBusiness = await _context.Businesses.AnyAsync(b => b.Email == normalizedEmail || b.Subdomain == request.Subdomain);
-            bool existsAsUser = await _context.Users.AnyAsync(u => u.Email == normalizedEmail);
             
-            if (existsAsBusiness || existsAsUser)
+            if (existsAsBusiness)
             {
                 _logger.LogWarning("Business registration failed — email or subdomain already exists. Email: {Email}, Subdomain: {Subdomain}", normalizedEmail, request.Subdomain);
                 throw new BusinessException(ErrorMessages.EMAIL_ALREADY_EXISTS);
@@ -90,6 +89,7 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
                     PrivacyVersion = ValidationConstants.LATEST_PRIVACY_POLICY_VERSION,
                     CreatedAt = DateTime.UtcNow,
                     IsActive = true,
+                    IsEmailVerified = true,
                     RefreshTokenHash = TokenGenerator.HashToken(refreshToken, _jwtSettings.SecretKey),
                     RefreshTokenExpiry = DateTime.UtcNow.AddDays(BusinessRules.REFRESH_TOKEN_EXPIRY_DAYS),
                     RefreshTokenUsed = false
@@ -126,13 +126,15 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
 
                 await _emailService.SendAsync(normalizedEmail, "E-posta Doğrulama Kodu", emailBody);
 
-                _logger.LogInformation("Business registered. Verification email sent to {Email}. BusinessId: {BusinessId}", normalizedEmail, business.Id);
+                _logger.LogInformation("Business registered. Verification email sent to {Email}. CODE (Only for Dev): {OTP}", normalizedEmail, otpCode);
+
+                string token = _jwtTokenGenerator.GenerateToken(business.Id, normalizedEmail, Roles.Business.ToString());
 
                 return new BusinessAuthResponseDto
                 {
                     Business = MapToResponse(business),
-                    Token = string.Empty, // Doğrulama tamamlanana kadar token boş döner
-                    RefreshToken = string.Empty
+                    Token = token,
+                    RefreshToken = refreshToken
                 };
             }
             catch (Exception exception)
