@@ -8,5 +8,6 @@ namespace AppointmentSystem.Api.Modules.ReportingModule.Services
         Task<AppointmentCountReportResponseDto> GetAppointmentCountReportAsync(AppointmentCountReportRequest request);
         Task<RevenueReportResponseDto> GetRevenueReportAsync(RevenueReportRequest request);
         Task<BranchStatsReportResponseDto> GetBranchStatsAsync(BranchStatsRequest request);
+        Task<PopularServicesResponseDto> GetPopularServicesAsync(PopularServicesRequest request);
     }
 }

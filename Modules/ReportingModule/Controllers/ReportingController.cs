@@ -96,5 +96,29 @@ namespace AppointmentSystem.Api.Modules.ReportingModule.Controllers
                     ApiResponse<object>.FailureResponse("Şube istatistikleri oluşturulurken bir hata oluştu: " + ex.Message));
             }
         }
+        [HttpGet("services/popular")]
+        [ProducesResponseType(typeof(ApiResponse<PopularServicesResponseDto>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), (int)HttpStatusCode.BadRequest)]
+        public async Task<IActionResult> GetPopularServices([FromQuery] PopularServicesRequest request)
+        {
+            try
+            {
+                var report = await _reportingService.GetPopularServicesAsync(request);
+                return Ok(ApiResponse<PopularServicesResponseDto>.SuccessResponse(report));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResponse<object>.FailureResponse(ex.Message));
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode((int)HttpStatusCode.InternalServerError,
+                    ApiResponse<object>.FailureResponse("Popüler hizmetler raporu oluşturulurken bir hata oluştu: " + ex.Message));
+            }
+        }
     }
 }

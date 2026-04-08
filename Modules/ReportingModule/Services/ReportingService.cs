@@ -468,6 +468,98 @@ namespace AppointmentSystem.Api.Modules.ReportingModule.Services
                 .Key.ToString();
         }
 
+        public async Task<PopularServicesResponseDto> GetPopularServicesAsync(PopularServicesRequest request)
+        {
+            Guid businessId = _currentUserService.TenantId ?? throw new UnauthorizedAccessException();
+
+            // 1. Validasyon
+            if (request.Top < 1 || request.Top > 20) request.Top = 10;
+            if (request.StartDate >= request.EndDate)
+                throw new ArgumentException("Başlangıç tarihi bitiş tarihinden önce olmalıdır.");
+
+            if ((request.EndDate - request.StartDate).TotalDays > 365 * 2 + 1)
+                throw new ArgumentException("Maksimum 2 yıllık tarih aralığı seçilebilir.");
+
+            // 2. Cache Kontrolü
+            string cacheKey = string.Format("report:services:{0}:{1:yyyyMMdd}:{2:yyyyMMdd}:{3}:{4}",
+                businessId, request.StartDate, request.EndDate, request.Top, request.BranchId ?? Guid.Empty);
+
+            PopularServicesResponseDto? cachedData = await _cacheService.GetAsync<PopularServicesResponseDto>(cacheKey);
+            if (cachedData != null) return cachedData;
+
+            // 3. Verileri Çek (Silinen hizmetleri dahil etmek için IgnoreQueryFilters)
+            var appointments = await _context.Appointments
+                .IgnoreQueryFilters()
+                .Include(a => a.Offering)
+                .Where(a => a.BusinessId == businessId &&
+                            a.StartTimeUtc >= request.StartDate &&
+                            a.StartTimeUtc <= request.EndDate &&
+                            !a.IsDeleted) // Sadece silinmemiş randevuları alıyoruz (Hizmet silinmiş olsa bile)
+                .ToListAsync();
+
+            if (request.BranchId.HasValue)
+            {
+                appointments = appointments.Where(a => a.BranchId == request.BranchId.Value).ToList();
+            }
+
+            if (!appointments.Any())
+            {
+                return new PopularServicesResponseDto
+                {
+                    StartDate = request.StartDate,
+                    EndDate = request.EndDate,
+                    TotalBookingsInPeriod = 0
+                };
+            }
+
+            int totalBookings = appointments.Count;
+            double daysInRange = (request.EndDate - request.StartDate).TotalDays + 1;
+
+            // 4. Gruplama ve Hesaplama
+            var serviceStats = appointments
+                .GroupBy(a => a.OfferingId)
+                .Select(g =>
+                {
+                    var firstApp = g.First();
+                    var offering = firstApp.Offering;
+                    var completedCount = g.Count(a => a.Status == AppointmentStatus.Completed);
+                    var serviceBookings = g.Count();
+
+                    return new ServicePopularityDto
+                    {
+                        OfferingId = g.Key,
+                        OfferingName = offering.IsDeleted ? (offering.Name + " (Deleted Service)") : offering.Name,
+                        PriceType = offering.PriceType,
+                        Price = offering.Price,
+                        TotalBookings = serviceBookings,
+                        CompletedBookings = completedCount,
+                        CancelledBookings = g.Count(a => a.Status == AppointmentStatus.Cancelled),
+                        TotalRevenue = g.Where(a => a.Status == AppointmentStatus.Completed && a.Offering.PriceType == OfferingModule.Enums.PriceType.Fixed)
+                                        .Sum(a => a.PriceAtBooking ?? (a.Offering.Price ?? 0)),
+                        BookingSharePercent = (double)serviceBookings / totalBookings * 100,
+                        AverageBookingsPerDay = (double)serviceBookings / daysInRange
+                    };
+                })
+                .OrderByDescending(s => s.TotalBookings)
+                .ToList();
+
+            // 5. Yanıtı Hazırla
+            var response = new PopularServicesResponseDto
+            {
+                StartDate = request.StartDate,
+                EndDate = request.EndDate,
+                TotalBookingsInPeriod = totalBookings,
+                Services = serviceStats.Take(request.Top).ToList(),
+                MostPopular = serviceStats.FirstOrDefault(),
+                MostRevenue = serviceStats.OrderByDescending(s => s.TotalRevenue).FirstOrDefault()
+            };
+
+            // 6. Önbelleğe al (15 dakika)
+            await _cacheService.SetAsync(cacheKey, response, TimeSpan.FromMinutes(15));
+
+            return response;
+        }
+
         private DateTime GetStartOfWeek(DateTime dt)
         {
             int diff = (7 + (dt.DayOfWeek - DayOfWeek.Monday)) % 7;
