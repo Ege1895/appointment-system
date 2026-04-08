@@ -34,5 +34,29 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Controllers
 
             return Ok(ApiResponse<object>.SuccessResponse(null!));
         }
+
+        [HttpPost("deactivate")]
+        public async Task<IActionResult> Deactivate()
+        {
+            DeactivationResponseDto response = await _businessService.DeactivateAsync();
+            
+            return Ok(ApiResponse<DeactivationResponseDto>.SuccessResponse(response));
+        }
+
+        [HttpPost("reactivate")]
+        public async Task<IActionResult> Reactivate()
+        {
+            DeactivationResponseDto response = await _businessService.ReactivateAsync();
+            
+            return Ok(ApiResponse<DeactivationResponseDto>.SuccessResponse(response));
+        }
+
+        [HttpDelete("account")]
+        public async Task<IActionResult> DeleteAccount([FromBody] DeleteBusinessAccountRequest request)
+        {
+            await _businessService.DeleteAccountAsync(request);
+            
+            return Ok(ApiResponse<object>.SuccessResponse(null!, "Hesap başarıyla silindi."));
+        }
     }
 }

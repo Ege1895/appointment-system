@@ -12,6 +12,8 @@ public class ErrorMessages
     public const string CAPACITY_LIMIT_EXCEEDED = "Capacity limit reached. Max allowed employees:";
     public const string BULK_CAPACITY_LIMIT_EXCEEDED = "Capacity limit reached. You can only add";
     public const string UNAUTHORIZED_ACCESS = "Unauthorized access";
+    public const string WRONG_PASSWORD_CONFIRMATION = "Onay şifresi hatalı.";
+    public const string ACCOUNT_DELETED_RECENTLY = "Hesap silme işlemi yakın zamanda gerçekleştirildi. Lütfen daha sonra tekrar deneyin.";
     
     // Employee Module Errors
     public const string EMPLOYEE_NOT_FOUND = "Employee not found or access denied.";

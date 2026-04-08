@@ -7,5 +7,9 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
         Task<BusinessResponseDto> GetProfileAsync();
         
         Task UpdateProfileAsync(UpdateBusinessProfileRequest request);
+
+        Task<DeactivationResponseDto> DeactivateAsync();
+        Task<DeactivationResponseDto> ReactivateAsync();
+        Task DeleteAccountAsync(DeleteBusinessAccountRequest request);
     }
 }

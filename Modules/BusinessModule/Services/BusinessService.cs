@@ -1,6 +1,8 @@
 using AppointmentSystem.Api.Modules.BusinessModule.DTOs;
 using AppointmentSystem.Api.Modules.BusinessModule.Models;
 using AppointmentSystem.Api.Modules.BusinessModule.Enums;
+using AppointmentSystem.Api.Modules.AppointmentModule.Enums;
+using AppointmentSystem.Api.Modules.AppointmentModule.Models;
 using AppointmentSystem.Api.Shared.Authentication;
 using AppointmentSystem.Api.Shared.Constants;
 using AppointmentSystem.Api.Shared.Database;
@@ -64,6 +66,116 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
             business.GalleryUrls = request.GalleryUrls ?? new List<string>();
 
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<DeactivationResponseDto> DeactivateAsync()
+        {
+            Guid businessId = GetBusinessId();
+            Business? business = await _context.Businesses.FirstOrDefaultAsync(b => b.Id == businessId);
+
+            if (business == null)
+            {
+                throw new NotFoundException(ErrorMessages.BUSINESS_NOT_FOUND);
+            }
+
+            business.IsActive = false;
+            await _context.SaveChangesAsync();
+
+            return new DeactivationResponseDto
+            {
+                IsActive = false,
+                Message = "İşletme hesabı donduruldu. Katalogda görünmeyecektir."
+            };
+        }
+
+        public async Task<DeactivationResponseDto> ReactivateAsync()
+        {
+            Guid businessId = GetBusinessId();
+            Business? business = await _context.Businesses.FirstOrDefaultAsync(b => b.Id == businessId);
+
+            if (business == null)
+            {
+                throw new NotFoundException(ErrorMessages.BUSINESS_NOT_FOUND);
+            }
+
+            business.IsActive = true;
+            await _context.SaveChangesAsync();
+
+            return new DeactivationResponseDto
+            {
+                IsActive = true,
+                Message = "İşletme hesabı tekrar aktif edildi."
+            };
+        }
+
+        public async Task DeleteAccountAsync(DeleteBusinessAccountRequest request)
+        {
+            Guid businessId = GetBusinessId();
+            Business? business = await _context.Businesses.FirstOrDefaultAsync(b => b.Id == businessId);
+
+            if (business == null)
+            {
+                throw new NotFoundException(ErrorMessages.BUSINESS_NOT_FOUND);
+            }
+
+            // Doğrulama
+            bool isPasswordValid = PasswordHasher.Verify(request.Password, business.PasswordHash);
+            if (!isPasswordValid)
+            {
+                throw new BusinessException(ErrorMessages.WRONG_PASSWORD_CONFIRMATION);
+            }
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // 1. Randevuları İptal Et
+                List<AppointmentStatus> cancelableStatuses = new List<AppointmentStatus>
+                {
+                    AppointmentStatus.PendingApproval,
+                    AppointmentStatus.Confirmed,
+                    AppointmentStatus.PendingTransfer
+                };
+
+                List<Appointment> appointments = await _context.Appointments
+                    .Where(a => a.BusinessId == businessId && cancelableStatuses.Contains(a.Status))
+                    .ToListAsync();
+
+                foreach (Appointment appointment in appointments)
+                {
+                    appointment.Status = AppointmentStatus.Cancelled;
+                    
+                    _context.AppointmentNotes.Add(new AppointmentNote
+                    {
+                        Id = Guid.NewGuid(),
+                        AppointmentId = appointment.Id,
+                        BusinessId = businessId,
+                        Content = BusinessRules.BUSINESS_CLOSED_APPOINTMENT_NOTE,
+                        AuthorId = "SYSTEM",
+                        AuthorRole = "System",
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+
+                // 2. İşletmeyi Soft-Delete Yap ve Anonimleştir
+                business.IsDeleted = true;
+                business.IsActive = false;
+                business.Email = $"deleted_{business.Id}{BusinessRules.DELETED_EMAIL_SUFFIX}";
+                business.ContactPhone = null;
+                business.OwnerFirstName = BusinessRules.DELETED_FIRST_NAME;
+                business.OwnerLastName = BusinessRules.DELETED_LAST_NAME;
+                
+                // 3. Refresh Token'ları Geçersiz Kıl
+                business.RefreshTokenHash = null;
+                business.RefreshTokenExpiry = null;
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         private BusinessResponseDto MapToResponse(Business business)
