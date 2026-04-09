@@ -1,5 +1,6 @@
 using System;
 using AppointmentSystem.Api.Modules.BusinessModule.Enums;
+using AppointmentSystem.Api.Modules.SubscriptionModule.DTOs;
 
 namespace AppointmentSystem.Api.Modules.BusinessModule.DTOs
 {
@@ -32,5 +33,7 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.DTOs
         public int EmployeeCapacity { get; set; }
 
         public bool IsOpen { get; set; }
+        
+        public SubscriptionInfo? Subscription { get; set; }
     }
 }

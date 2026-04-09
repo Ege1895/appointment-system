@@ -2,6 +2,7 @@ using AppointmentSystem.Api.Modules.EmployeeModule.Services;
 using AppointmentSystem.Api.Modules.HealthModule.Services;
 using AppointmentSystem.Api.Modules.BusinessModule.Services;
 using AppointmentSystem.Api.Modules.SubscriptionModule.Data;
+using AppointmentSystem.Api.Modules.SubscriptionModule.Services;
 using AppointmentSystem.Api.Modules.UserModule.Services;
 using AppointmentSystem.Api.Modules.UserModule.DTOs;
 using AppointmentSystem.Api.Modules.OfferingModule.Services;

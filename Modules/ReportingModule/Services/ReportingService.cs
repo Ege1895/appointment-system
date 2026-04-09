@@ -16,6 +16,7 @@ namespace AppointmentSystem.Api.Modules.ReportingModule.Services
     public class ReportingService : IReportingService
     {
         private readonly ApplicationDbContext _context;
+        private readonly ICurrentUserService _currentUserService;
         private readonly ICacheService _cacheService;
         private readonly ISubscriptionEnforcementService _enforcementService;
 

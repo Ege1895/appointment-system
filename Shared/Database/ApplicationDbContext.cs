@@ -48,6 +48,7 @@ namespace AppointmentSystem.Api.Shared.Database
         public DbSet<LoyaltyTransaction> LoyaltyTransactions { get; set; }
         public DbSet<SubscriptionPackage> SubscriptionPackages { get; set; }
         public DbSet<BusinessSubscription> BusinessSubscriptions { get; set; }
+        public DbSet<SubscriptionChangeRequest> SubscriptionChangeRequests { get; set; }
         public DbSet<Campaign> Campaigns { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -109,6 +110,9 @@ namespace AppointmentSystem.Api.Shared.Database
 
             modelBuilder.Entity<BusinessSubscription>().HasQueryFilter(bs => bs.IsActive && 
                 (!_currentUserService.TenantId.HasValue || bs.BusinessId == _currentUserService.TenantId.Value));
+            
+            modelBuilder.Entity<SubscriptionChangeRequest>().HasQueryFilter(scr => 
+                (!_currentUserService.TenantId.HasValue || scr.BusinessId == _currentUserService.TenantId.Value));
             
             modelBuilder.Entity<Campaign>().HasQueryFilter(c => !c.IsDeleted && 
                 (!_currentUserService.TenantId.HasValue || c.BusinessId == _currentUserService.TenantId.Value));

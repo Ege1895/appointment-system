@@ -38,4 +38,32 @@ namespace AppointmentSystem.Api.Modules.SubscriptionModule.DTOs
         public bool LoyaltyEnabled { get; set; }
         public bool AnalyticsEnabled { get; set; }
     }
+
+    public class UpgradePackageRequest
+    {
+        public Guid ToPackageId { get; set; }
+        public BillingCycle BillingCycle { get; set; } = BillingCycle.Monthly;
+    }
+
+    public class UpgradePackageResponseDto
+    {
+        public Guid ChangeRequestId { get; set; }
+        public string FromPackageName { get; set; } = string.Empty;
+        public string ToPackageName { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public bool ActivatedImmediately { get; set; }
+        public DateTime? NewExpiresAt { get; set; }
+    }
+
+    public class SubscriptionInfo
+    {
+        public string PackageName { get; set; } = string.Empty;
+        public DateTime? ExpiresAt { get; set; }
+        public bool IsActive { get; set; }
+        public bool IsExpired => ExpiresAt.HasValue && ExpiresAt.Value < DateTime.UtcNow;
+        public int MaxEmployees { get; set; }
+        public bool CampaignsEnabled { get; set; }
+        public bool LoyaltyEnabled { get; set; }
+        public bool AnalyticsEnabled { get; set; }
+    }
 }

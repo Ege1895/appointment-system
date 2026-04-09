@@ -39,5 +39,31 @@ namespace AppointmentSystem.Api.Modules.SubscriptionModule.Controllers
             
             return Ok(ApiResponse<BusinessSubscriptionDto>.SuccessResponse(sub));
         }
+
+        [HttpPost("upgrade")]
+        [Authorize(Roles = "Business")]
+        public async Task<IActionResult> Upgrade([FromBody] UpgradePackageRequest request)
+        {
+            if (!_currentUserService.TenantId.HasValue) return Unauthorized();
+            
+            var result = await _subscriptionService.RequestUpgradeAsync(_currentUserService.TenantId.Value, request);
+            return Ok(ApiResponse<UpgradePackageResponseDto>.SuccessResponse(result));
+        }
+
+        [HttpPost("upgrade/{id}/confirm")]
+        [Authorize(Roles = "Business")]
+        public async Task<IActionResult> ConfirmUpgrade(Guid id)
+        {
+            var result = await _subscriptionService.ConfirmUpgradeAsync(id);
+            return Ok(ApiResponse<UpgradePackageResponseDto>.SuccessResponse(result));
+        }
+
+        [HttpDelete("upgrade/{id}")]
+        [Authorize(Roles = "Business")]
+        public async Task<IActionResult> CancelUpgrade(Guid id)
+        {
+            await _subscriptionService.CancelUpgradeRequestAsync(id);
+            return Ok(ApiResponse<object>.SuccessResponse(null));
+        }
     }
 }
