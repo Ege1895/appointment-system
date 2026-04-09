@@ -7,6 +7,7 @@ using AppointmentSystem.Api.Modules.WorkingHourModule.Models;
 using AppointmentSystem.Api.Modules.AppointmentModule.Models;
 using AppointmentSystem.Api.Modules.FeedbackModule.Models;
 using AppointmentSystem.Api.Modules.BranchModule.Models;
+using AppointmentSystem.Api.Modules.CampaignModule.Models;
 using Microsoft.EntityFrameworkCore;
 
 using AppointmentSystem.Api.Shared.Authentication;
@@ -41,6 +42,9 @@ namespace AppointmentSystem.Api.Shared.Database
         public DbSet<EmailVerification> EmailVerifications { get; set; }
         public DbSet<BusinessKnownCustomer> BusinessKnownCustomers { get; set; }
         public DbSet<PendingCustomerInvitation> PendingCustomerInvitations { get; set; }
+        public DbSet<LoyaltyProgram> LoyaltyPrograms { get; set; }
+        public DbSet<UserLoyaltyPoints> UserLoyaltyPoints { get; set; }
+        public DbSet<LoyaltyTransaction> LoyaltyTransactions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -89,6 +93,15 @@ namespace AppointmentSystem.Api.Shared.Database
 
             modelBuilder.Entity<PendingCustomerInvitation>().HasQueryFilter(i => !i.IsDeleted && 
                 (!_currentUserService.TenantId.HasValue || i.BusinessId == _currentUserService.TenantId.Value));
+
+            modelBuilder.Entity<LoyaltyProgram>().HasQueryFilter(lp => !lp.IsDeleted && 
+                (!_currentUserService.TenantId.HasValue || lp.BusinessId == _currentUserService.TenantId.Value));
+
+            modelBuilder.Entity<UserLoyaltyPoints>().HasQueryFilter(ulp => !ulp.IsDeleted && 
+                (!_currentUserService.TenantId.HasValue || ulp.BusinessId == _currentUserService.TenantId.Value));
+
+            modelBuilder.Entity<LoyaltyTransaction>().HasQueryFilter(lt => 
+                (!_currentUserService.TenantId.HasValue || lt.BusinessId == _currentUserService.TenantId.Value));
         }
     }
 }

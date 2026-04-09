@@ -46,5 +46,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Models
         public DateTime? ReminderSentAt { get; set; }
 
         public decimal? PriceAtBooking { get; set; }
+        public decimal? DiscountApplied { get; set; }
+        public decimal? FinalPrice { get; set; }
     }
 }

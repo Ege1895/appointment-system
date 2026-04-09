@@ -9,5 +9,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.DTOs
         
         // Müşterinin seçtiği başlangıç tarihi/saati (UTC olarak gelmeli)
         public DateTime StartTimeUtc { get; set; }
+
+        public int? LoyaltyPointsToRedeem { get; set; }
     }
 }

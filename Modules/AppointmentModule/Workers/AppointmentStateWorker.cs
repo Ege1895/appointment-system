@@ -1,5 +1,6 @@
 using AppointmentSystem.Api.Modules.AppointmentModule.Enums;
 using AppointmentSystem.Api.Modules.AppointmentModule.Models;
+using AppointmentSystem.Api.Modules.CampaignModule.Services;
 using AppointmentSystem.Api.Shared.Constants;
 using AppointmentSystem.Api.Shared.Database;
 using Microsoft.EntityFrameworkCore;
@@ -57,7 +58,9 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Workers
             try
             {
                 ApplicationDbContext context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                ILoyaltyService loyaltyService = scope.ServiceProvider.GetRequiredService<ILoyaltyService>();
                 await ProcessAppointmentTimeoutsAsync(context, stoppingToken);
+                await ProcessAutoCompletionAsync(context, loyaltyService, stoppingToken);
             }
             finally
             {
@@ -157,6 +160,37 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Workers
                     pendingApprovalTimeouts.Count,
                     pendingTransferTimeouts.Count,
                     rescheduleTimeouts.Count);
+            }
+        }
+
+        private async Task ProcessAutoCompletionAsync(ApplicationDbContext context, ILoyaltyService loyaltyService, CancellationToken stoppingToken)
+        {
+            DateTime now = DateTime.UtcNow;
+
+            // Find Confirmed appointments that have ended
+            List<Appointment> completedAppointments = await context.Appointments
+                .Where(a => a.Status == AppointmentStatus.Confirmed && a.EndTimeUtc <= now)
+                .ToListAsync(stoppingToken);
+
+            if (!completedAppointments.Any()) return;
+
+            foreach (Appointment app in completedAppointments)
+            {
+                app.Status = AppointmentStatus.Completed;
+            }
+
+            await context.SaveChangesAsync(stoppingToken);
+
+            foreach (Appointment app in completedAppointments)
+            {
+                try
+                {
+                    await loyaltyService.EarnPointsForAppointmentAsync(app.Id);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to earn points for completed appointment {AppointmentId}.", app.Id);
+                }
             }
         }
     }

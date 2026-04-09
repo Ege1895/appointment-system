@@ -20,6 +20,7 @@ using AppointmentSystem.Api.Shared.Responses;
 using AppointmentSystem.Api.Shared.Constants;
 using AppointmentSystem.Api.Shared.Notifications;
 using AppointmentSystem.Api.Modules.ReportingModule.Services;
+using AppointmentSystem.Api.Modules.CampaignModule.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -160,6 +161,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IReportingService, ReportingService>();
 builder.Services.AddScoped<IExportService, ExportService>();
 builder.Services.AddScoped<IImportService, ImportService>();
+builder.Services.AddScoped<ILoyaltyService, LoyaltyService>();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
 builder.Services.AddScoped<AuditableEntitySaveChangesInterceptor>();
 
