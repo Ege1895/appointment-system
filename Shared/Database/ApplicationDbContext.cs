@@ -8,6 +8,7 @@ using AppointmentSystem.Api.Modules.AppointmentModule.Models;
 using AppointmentSystem.Api.Modules.FeedbackModule.Models;
 using AppointmentSystem.Api.Modules.BranchModule.Models;
 using AppointmentSystem.Api.Modules.CampaignModule.Models;
+using AppointmentSystem.Api.Modules.SubscriptionModule.Models;
 using Microsoft.EntityFrameworkCore;
 
 using AppointmentSystem.Api.Shared.Authentication;
@@ -45,6 +46,9 @@ namespace AppointmentSystem.Api.Shared.Database
         public DbSet<LoyaltyProgram> LoyaltyPrograms { get; set; }
         public DbSet<UserLoyaltyPoints> UserLoyaltyPoints { get; set; }
         public DbSet<LoyaltyTransaction> LoyaltyTransactions { get; set; }
+        public DbSet<SubscriptionPackage> SubscriptionPackages { get; set; }
+        public DbSet<BusinessSubscription> BusinessSubscriptions { get; set; }
+        public DbSet<Campaign> Campaigns { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -102,6 +106,12 @@ namespace AppointmentSystem.Api.Shared.Database
 
             modelBuilder.Entity<LoyaltyTransaction>().HasQueryFilter(lt => 
                 (!_currentUserService.TenantId.HasValue || lt.BusinessId == _currentUserService.TenantId.Value));
+
+            modelBuilder.Entity<BusinessSubscription>().HasQueryFilter(bs => bs.IsActive && 
+                (!_currentUserService.TenantId.HasValue || bs.BusinessId == _currentUserService.TenantId.Value));
+            
+            modelBuilder.Entity<Campaign>().HasQueryFilter(c => !c.IsDeleted && 
+                (!_currentUserService.TenantId.HasValue || c.BusinessId == _currentUserService.TenantId.Value));
         }
     }
 }

@@ -3,6 +3,7 @@ using AppointmentSystem.Api.Modules.AppointmentModule.Models;
 using AppointmentSystem.Api.Modules.CampaignModule.DTOs;
 using AppointmentSystem.Api.Modules.CampaignModule.Enums;
 using AppointmentSystem.Api.Modules.CampaignModule.Models;
+using AppointmentSystem.Api.Modules.SubscriptionModule.Services;
 using AppointmentSystem.Api.Shared.Authentication;
 using AppointmentSystem.Api.Shared.Constants;
 using AppointmentSystem.Api.Shared.Database;
@@ -15,11 +16,13 @@ namespace AppointmentSystem.Api.Modules.CampaignModule.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ICurrentUserService _currentUserService;
+        private readonly ISubscriptionEnforcementService _enforcementService;
 
-        public LoyaltyService(ApplicationDbContext context, ICurrentUserService currentUserService)
+        public LoyaltyService(ApplicationDbContext context, ICurrentUserService currentUserService, ISubscriptionEnforcementService enforcementService)
         {
             _context = context;
             _currentUserService = currentUserService;
+            _enforcementService = enforcementService;
         }
 
         private Guid GetBusinessId() => _currentUserService.TenantId ?? throw new BusinessException(ErrorMessages.BUSINESS_CONTEXT_NOT_FOUND);
@@ -28,6 +31,12 @@ namespace AppointmentSystem.Api.Modules.CampaignModule.Services
         public async Task<LoyaltyProgramResponseDto> SetupProgramAsync(SetupLoyaltyProgramRequest request)
         {
             Guid businessId = GetBusinessId();
+            
+            if (request.IsEnabled)
+            {
+                await _enforcementService.EnsureFeatureEnabledAsync(businessId, "Loyalty");
+            }
+
             LoyaltyProgram? program = await _context.LoyaltyPrograms.FirstOrDefaultAsync(lp => lp.BusinessId == businessId);
 
             if (program == null)
