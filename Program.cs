@@ -73,6 +73,14 @@ builder.Services.AddRateLimiter(options =>
         opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
         opt.QueueLimit = 0;
     });
+
+    options.AddFixedWindowLimiter(RateLimitingPolicies.IMPORT_POLICY, opt =>
+    {
+        opt.PermitLimit = 5;
+        opt.Window = TimeSpan.FromHours(1);
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
 });
 
 builder.Services.AddCors(options =>
@@ -151,6 +159,7 @@ builder.Services.AddScoped<IBusinessCustomerService, BusinessCustomerService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IReportingService, ReportingService>();
 builder.Services.AddScoped<IExportService, ExportService>();
+builder.Services.AddScoped<IImportService, ImportService>();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
 builder.Services.AddScoped<AuditableEntitySaveChangesInterceptor>();
 
