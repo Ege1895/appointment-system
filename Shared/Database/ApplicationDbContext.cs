@@ -9,6 +9,7 @@ using AppointmentSystem.Api.Modules.FeedbackModule.Models;
 using AppointmentSystem.Api.Modules.BranchModule.Models;
 using AppointmentSystem.Api.Modules.CampaignModule.Models;
 using AppointmentSystem.Api.Modules.SubscriptionModule.Models;
+using AppointmentSystem.Api.Modules.PromotionModule.Models;
 using Microsoft.EntityFrameworkCore;
 
 using AppointmentSystem.Api.Shared.Authentication;
@@ -49,6 +50,8 @@ namespace AppointmentSystem.Api.Shared.Database
         public DbSet<SubscriptionPackage> SubscriptionPackages { get; set; }
         public DbSet<BusinessSubscription> BusinessSubscriptions { get; set; }
         public DbSet<SubscriptionChangeRequest> SubscriptionChangeRequests { get; set; }
+        public DbSet<BoostPackage> BoostPackages { get; set; }
+        public DbSet<BusinessBoost> BusinessBoosts { get; set; }
         public DbSet<Campaign> Campaigns { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -116,6 +119,11 @@ namespace AppointmentSystem.Api.Shared.Database
             
             modelBuilder.Entity<Campaign>().HasQueryFilter(c => !c.IsDeleted && 
                 (!_currentUserService.TenantId.HasValue || c.BusinessId == _currentUserService.TenantId.Value));
+
+            modelBuilder.Entity<BusinessBoost>().HasQueryFilter(bb => bb.IsActive && !bb.IsDeleted &&
+                (!_currentUserService.TenantId.HasValue || bb.BusinessId == _currentUserService.TenantId.Value));
+
+            modelBuilder.Entity<BoostPackage>().HasQueryFilter(bp => bp.IsActive && !bp.IsDeleted);
         }
     }
 }

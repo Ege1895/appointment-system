@@ -3,6 +3,9 @@ using AppointmentSystem.Api.Modules.HealthModule.Services;
 using AppointmentSystem.Api.Modules.BusinessModule.Services;
 using AppointmentSystem.Api.Modules.SubscriptionModule.Data;
 using AppointmentSystem.Api.Modules.SubscriptionModule.Services;
+using AppointmentSystem.Api.Modules.PromotionModule.Data;
+using AppointmentSystem.Api.Modules.PromotionModule.Services;
+using AppointmentSystem.Api.Modules.PromotionModule.Workers;
 using AppointmentSystem.Api.Modules.UserModule.Services;
 using AppointmentSystem.Api.Modules.UserModule.DTOs;
 using AppointmentSystem.Api.Modules.OfferingModule.Services;
@@ -166,6 +169,8 @@ builder.Services.AddScoped<IImportService, ImportService>();
 builder.Services.AddScoped<ILoyaltyService, LoyaltyService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 builder.Services.AddScoped<ISubscriptionEnforcementService, SubscriptionEnforcementService>();
+builder.Services.AddScoped<IPromotionService, PromotionService>();
+builder.Services.AddHostedService<BoostExpiryWorker>();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
 builder.Services.AddScoped<AuditableEntitySaveChangesInterceptor>();
 
@@ -238,6 +243,8 @@ using (IServiceScope scope = app.Services.CreateScope())
     dbContext.Database.Migrate();
     // Seed default subscription packages
     await SubscriptionSeeder.SeedAsync(dbContext);
+    // Seed default boost packages
+    await PromotionSeeder.SeedAsync(dbContext);
 }
 
 app.UseMiddleware<ExceptionMiddleware>();

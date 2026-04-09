@@ -1,5 +1,6 @@
 using AppointmentSystem.Api.Modules.BusinessModule.Models;
 using AppointmentSystem.Api.Modules.CatalogModule.DTOs;
+using AppointmentSystem.Api.Modules.PromotionModule.Models;
 using AppointmentSystem.Api.Shared.Caching;
 using AppointmentSystem.Api.Shared.Constants;
 using AppointmentSystem.Api.Shared.Database;
@@ -52,7 +53,8 @@ namespace AppointmentSystem.Api.Modules.CatalogModule.Services
                 pageSize = BusinessRules.MAX_CATALOG_PAGE_SIZE;
             }
 
-            string cacheKey = string.Format(CacheKeys.CATALOG_SEARCH_BUSINESSES, categoryFlag ?? 0, page, pageSize);
+            string cacheVersion = await _cacheService.GetAsync<string>("catalog:version") ?? "v1";
+            string cacheKey = string.Format(CacheKeys.CATALOG_SEARCH_BUSINESSES, categoryFlag ?? 0, page, pageSize) + ":" + cacheVersion;
 
             (IReadOnlyList<PublicBusinessSummaryDto> Items, PaginationMeta Meta)? cachedResult =
                 await _cacheService.GetAsync<(IReadOnlyList<PublicBusinessSummaryDto>, PaginationMeta)>(cacheKey);
@@ -73,16 +75,25 @@ namespace AppointmentSystem.Api.Modules.CatalogModule.Services
 
             int total = await query.CountAsync();
 
-            List<Business> rows = await query
-                .OrderByDescending(b => b.AverageRating)
-                .ThenByDescending(b => b.ReviewCount)
-                .ThenByDescending(b => b.CreatedAt)
+            var rows = await query
+                .Select(b => new
+                {
+                    Business = b,
+                    Boost = _context.BusinessBoosts
+                        .Where(bb => bb.BusinessId == b.Id && bb.IsActive && bb.ExpiresAt > DateTime.UtcNow)
+                        .Select(bb => new { bb.Package.BoostScore, bb.ExpiresAt })
+                        .FirstOrDefault()
+                })
+                .OrderByDescending(x => x.Boost != null ? x.Boost.BoostScore : 0)
+                .ThenByDescending(x => x.Business.AverageRating)
+                .ThenByDescending(x => x.Business.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
             PaginationMeta meta = PaginationMeta.Create(page, pageSize, total);
-            (IReadOnlyList<PublicBusinessSummaryDto>, PaginationMeta) result = (rows.Select(MapToSummary).ToList(), meta);
+            var items = rows.Select(x => MapWithBoost(x.Business, x.Boost != null, x.Boost?.ExpiresAt)).ToList();
+            (IReadOnlyList<PublicBusinessSummaryDto>, PaginationMeta) result = (items, meta);
 
             await _cacheService.SetAsync(cacheKey, result, TimeSpan.FromMinutes(BusinessRules.CACHE_CATALOG_TTL_MINUTES));
 
@@ -101,7 +112,8 @@ namespace AppointmentSystem.Api.Modules.CatalogModule.Services
                 take = BusinessRules.MAX_POPULAR_TAKE;
             }
 
-            string cacheKey = string.Format(CacheKeys.CATALOG_POPULAR_BUSINESSES, take);
+            string cacheVersion = await _cacheService.GetAsync<string>("catalog:version") ?? "v1";
+            string cacheKey = string.Format(CacheKeys.CATALOG_POPULAR_BUSINESSES, take) + ":" + cacheVersion;
 
             IReadOnlyList<PublicBusinessSummaryDto>? cached = await _cacheService.GetAsync<IReadOnlyList<PublicBusinessSummaryDto>>(cacheKey);
             if (cached != null)
@@ -109,22 +121,36 @@ namespace AppointmentSystem.Api.Modules.CatalogModule.Services
                 return cached;
             }
 
-            List<Business> rows = await _context.Businesses
+            List<PublicBusinessSummaryDto> items = await _context.Businesses
                 .AsNoTracking()
                 .Where(b => b.IsActive && b.IsOpen)
-                .OrderByDescending(b => b.AverageRating)
-                .ThenByDescending(b => b.ReviewCount)
-                .ThenByDescending(b => b.CreatedAt)
+                .Select(b => new
+                {
+                    Business = b,
+                    Boost = _context.BusinessBoosts
+                        .Where(bb => bb.BusinessId == b.Id && bb.IsActive && bb.ExpiresAt > DateTime.UtcNow)
+                        .Select(bb => new { bb.Package.BoostScore, bb.ExpiresAt })
+                        .FirstOrDefault()
+                })
+                .OrderByDescending(x => x.Boost != null ? x.Boost.BoostScore : 0)
+                .ThenByDescending(x => x.Business.AverageRating)
+                .ThenByDescending(x => x.Business.CreatedAt)
                 .Take(take)
+                .Select(x => MapWithBoost(x.Business, x.Boost != null, x.Boost != null ? (DateTime?)x.Boost.ExpiresAt : null))
                 .ToListAsync();
 
-            IReadOnlyList<PublicBusinessSummaryDto> result = rows.Select(MapToSummary).ToList();
+            IReadOnlyList<PublicBusinessSummaryDto> result = items;
             await _cacheService.SetAsync(cacheKey, result, TimeSpan.FromMinutes(BusinessRules.CACHE_CATALOG_TTL_MINUTES));
 
             return result;
         }
 
         private static PublicBusinessSummaryDto MapToSummary(Business b)
+        {
+            return MapWithBoost(b, false, null);
+        }
+
+        private static PublicBusinessSummaryDto MapWithBoost(Business b, bool isPromoted, DateTime? expiresAt)
         {
             string? thumb = b.GalleryUrls is { Count: > 0 } ? b.GalleryUrls[0] : null;
 
@@ -139,7 +165,9 @@ namespace AppointmentSystem.Api.Modules.CatalogModule.Services
                 AverageRating = b.AverageRating,
                 ReviewCount = b.ReviewCount,
                 IsOpen = b.IsOpen,
-                ThumbnailUrl = thumb
+                ThumbnailUrl = thumb,
+                IsPromoted = isPromoted,
+                BoostExpiresAt = expiresAt
             };
         }
     }

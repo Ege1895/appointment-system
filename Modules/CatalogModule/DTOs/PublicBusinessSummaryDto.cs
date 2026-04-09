@@ -1,5 +1,7 @@
 using AppointmentSystem.Api.Modules.BusinessModule.Enums;
 
+using System;
+
 namespace AppointmentSystem.Api.Modules.CatalogModule.DTOs
 {
     public class PublicBusinessSummaryDto
@@ -23,5 +25,8 @@ namespace AppointmentSystem.Api.Modules.CatalogModule.DTOs
         public bool IsOpen { get; set; }
 
         public string? ThumbnailUrl { get; set; }
+
+        public bool IsPromoted { get; set; }
+        public DateTime? BoostExpiresAt { get; set; }
     }
 }
