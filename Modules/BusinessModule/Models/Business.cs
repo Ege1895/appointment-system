@@ -1,5 +1,6 @@
 using AppointmentSystem.Api.Shared.Models;
 using AppointmentSystem.Api.Modules.BusinessModule.Enums;
+using AppointmentSystem.Api.Modules.SubscriptionModule.Models;
 namespace AppointmentSystem.Api.Modules.BusinessModule.Models
 {
     public class Business : BaseEntity
@@ -48,5 +49,8 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Models
         public bool IsEmailVerified { get; set; } = false;
 
         public string CurrencyCode { get; set; } = AppointmentSystem.Api.Shared.Constants.BusinessRules.DEFAULT_CURRENCY;
+
+        // Navigation
+        public virtual BusinessSubscription? Subscription { get; set; }
     }
 }

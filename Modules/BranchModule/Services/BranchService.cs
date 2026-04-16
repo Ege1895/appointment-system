@@ -1,5 +1,6 @@
 using AppointmentSystem.Api.Modules.BranchModule.DTOs;
 using AppointmentSystem.Api.Modules.BranchModule.Models;
+using AppointmentSystem.Api.Modules.SubscriptionModule.Services;
 using AppointmentSystem.Api.Shared.Authentication;
 using AppointmentSystem.Api.Shared.Constants;
 using AppointmentSystem.Api.Shared.Database;
@@ -13,11 +14,13 @@ namespace AppointmentSystem.Api.Modules.BranchModule.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ICurrentUserService _currentUserService;
+        private readonly ISubscriptionEnforcementService _enforcementService;
 
-        public BranchService(ApplicationDbContext context, ICurrentUserService currentUserService)
+        public BranchService(ApplicationDbContext context, ICurrentUserService currentUserService, ISubscriptionEnforcementService enforcementService)
         {
             _context = context;
             _currentUserService = currentUserService;
+            _enforcementService = enforcementService;
         }
 
         private Guid GetBusinessId()
@@ -32,6 +35,8 @@ namespace AppointmentSystem.Api.Modules.BranchModule.Services
         public async Task<BranchResponseDto> CreateAsync(CreateBranchRequest request)
         {
             Guid businessId = GetBusinessId();
+
+            await _enforcementService.EnsureCanAddBranchAsync(businessId);
 
             // Şube sayısı kontrolü
             int branchCount = await _context.Branches.CountAsync(b => b.BusinessId == businessId);

@@ -1,6 +1,11 @@
 using AppointmentSystem.Api.Modules.EmployeeModule.Services;
 using AppointmentSystem.Api.Modules.HealthModule.Services;
 using AppointmentSystem.Api.Modules.BusinessModule.Services;
+using AppointmentSystem.Api.Modules.SubscriptionModule.Data;
+using AppointmentSystem.Api.Modules.SubscriptionModule.Services;
+using AppointmentSystem.Api.Modules.PromotionModule.Data;
+using AppointmentSystem.Api.Modules.PromotionModule.Services;
+using AppointmentSystem.Api.Modules.PromotionModule.Workers;
 using AppointmentSystem.Api.Modules.UserModule.Services;
 using AppointmentSystem.Api.Modules.UserModule.DTOs;
 using AppointmentSystem.Api.Modules.OfferingModule.Services;
@@ -20,6 +25,7 @@ using AppointmentSystem.Api.Shared.Responses;
 using AppointmentSystem.Api.Shared.Constants;
 using AppointmentSystem.Api.Shared.Notifications;
 using AppointmentSystem.Api.Modules.ReportingModule.Services;
+using AppointmentSystem.Api.Modules.CampaignModule.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -69,6 +75,14 @@ builder.Services.AddRateLimiter(options =>
     options.AddFixedWindowLimiter(RateLimitingPolicies.EXPORT_POLICY, opt =>
     {
         opt.PermitLimit = 10;
+        opt.Window = TimeSpan.FromHours(1);
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
+
+    options.AddFixedWindowLimiter(RateLimitingPolicies.IMPORT_POLICY, opt =>
+    {
+        opt.PermitLimit = 5;
         opt.Window = TimeSpan.FromHours(1);
         opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
         opt.QueueLimit = 0;
@@ -151,6 +165,12 @@ builder.Services.AddScoped<IBusinessCustomerService, BusinessCustomerService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IReportingService, ReportingService>();
 builder.Services.AddScoped<IExportService, ExportService>();
+builder.Services.AddScoped<IImportService, ImportService>();
+builder.Services.AddScoped<ILoyaltyService, LoyaltyService>();
+builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
+builder.Services.AddScoped<ISubscriptionEnforcementService, SubscriptionEnforcementService>();
+builder.Services.AddScoped<IPromotionService, PromotionService>();
+builder.Services.AddHostedService<BoostExpiryWorker>();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
 builder.Services.AddScoped<AuditableEntitySaveChangesInterceptor>();
 
@@ -221,6 +241,10 @@ using (IServiceScope scope = app.Services.CreateScope())
 {
     ApplicationDbContext dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     dbContext.Database.Migrate();
+    // Seed default subscription packages
+    await SubscriptionSeeder.SeedAsync(dbContext);
+    // Seed default boost packages
+    await PromotionSeeder.SeedAsync(dbContext);
 }
 
 app.UseMiddleware<ExceptionMiddleware>();

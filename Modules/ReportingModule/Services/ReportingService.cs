@@ -1,5 +1,6 @@
 using AppointmentSystem.Api.Modules.AppointmentModule.Enums;
 using AppointmentSystem.Api.Modules.ReportingModule.DTOs;
+using AppointmentSystem.Api.Modules.SubscriptionModule.Services;
 using AppointmentSystem.Api.Shared.Authentication;
 using AppointmentSystem.Api.Shared.Caching;
 using AppointmentSystem.Api.Shared.Database;
@@ -17,17 +18,20 @@ namespace AppointmentSystem.Api.Modules.ReportingModule.Services
         private readonly ApplicationDbContext _context;
         private readonly ICurrentUserService _currentUserService;
         private readonly ICacheService _cacheService;
+        private readonly ISubscriptionEnforcementService _enforcementService;
 
-        public ReportingService(ApplicationDbContext context, ICurrentUserService currentUserService, ICacheService cacheService)
+        public ReportingService(ApplicationDbContext context, ICurrentUserService currentUserService, ICacheService cacheService, ISubscriptionEnforcementService enforcementService)
         {
             _context = context;
             _currentUserService = currentUserService;
             _cacheService = cacheService;
+            _enforcementService = enforcementService;
         }
 
         public async Task<AppointmentCountReportResponseDto> GetAppointmentCountReportAsync(AppointmentCountReportRequest request)
         {
             var businessId = _currentUserService.TenantId ?? throw new UnauthorizedAccessException();
+            await _enforcementService.EnsureFeatureEnabledAsync(businessId, "Analytics");
 
             // 1. Validasyon
             ValidateRequest(request);
@@ -178,6 +182,7 @@ namespace AppointmentSystem.Api.Modules.ReportingModule.Services
         public async Task<RevenueReportResponseDto> GetRevenueReportAsync(RevenueReportRequest request)
         {
             Guid businessId = _currentUserService.TenantId ?? throw new UnauthorizedAccessException();
+            await _enforcementService.EnsureFeatureEnabledAsync(businessId, "Analytics");
 
             // 1. Validasyon (Ortak validasyon mantığı kullanılabilir)
             ValidateRevenueRequest(request);
@@ -363,6 +368,7 @@ namespace AppointmentSystem.Api.Modules.ReportingModule.Services
         public async Task<BranchStatsReportResponseDto> GetBranchStatsAsync(BranchStatsRequest request)
         {
             Guid businessId = _currentUserService.TenantId ?? throw new UnauthorizedAccessException();
+            await _enforcementService.EnsureFeatureEnabledAsync(businessId, "Analytics");
 
             // 1. Validasyon (Max 2 yıl)
             if (request.StartDate >= request.EndDate)
@@ -471,6 +477,7 @@ namespace AppointmentSystem.Api.Modules.ReportingModule.Services
         public async Task<PopularServicesResponseDto> GetPopularServicesAsync(PopularServicesRequest request)
         {
             Guid businessId = _currentUserService.TenantId ?? throw new UnauthorizedAccessException();
+            await _enforcementService.EnsureFeatureEnabledAsync(businessId, "Analytics");
 
             // 1. Validasyon
             if (request.Top < 1 || request.Top > 20) request.Top = 10;

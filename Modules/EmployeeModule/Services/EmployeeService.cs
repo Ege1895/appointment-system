@@ -3,6 +3,7 @@ using AppointmentSystem.Api.Modules.EmployeeModule.DTOs;
 using AppointmentSystem.Api.Modules.EmployeeModule.Models;
 using AppointmentSystem.Api.Modules.UserModule.Models;
 using AppointmentSystem.Api.Shared.Authentication;
+using AppointmentSystem.Api.Modules.SubscriptionModule.Services;
 using AppointmentSystem.Api.Shared.Constants;
 using AppointmentSystem.Api.Shared.Database;
 using AppointmentSystem.Api.Shared.Exceptions;
@@ -15,11 +16,13 @@ namespace AppointmentSystem.Api.Modules.EmployeeModule.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ICurrentUserService _currentUserService;
+        private readonly ISubscriptionEnforcementService _enforcementService;
 
-        public EmployeeService(ApplicationDbContext context, ICurrentUserService currentUserService)
+        public EmployeeService(ApplicationDbContext context, ICurrentUserService currentUserService, ISubscriptionEnforcementService enforcementService)
         {
             _context = context;
             _currentUserService = currentUserService;
+            _enforcementService = enforcementService;
         }
 
         private Guid GetBusinessId()
@@ -45,10 +48,7 @@ namespace AppointmentSystem.Api.Modules.EmployeeModule.Services
                 throw new NotFoundException(ErrorMessages.BUSINESS_NOT_FOUND);
             }
 
-            if (currentCount >= business.EmployeeCapacity)
-            {
-                throw new BusinessException($"{ErrorMessages.CAPACITY_LIMIT_EXCEEDED} {business.EmployeeCapacity}");
-            }
+            await _enforcementService.EnsureCanAddEmployeeAsync(businessId);
 
             bool isBusinessEmail = await _context.Businesses.AnyAsync(b => b.Email == request.Email);
             if (isBusinessEmail)

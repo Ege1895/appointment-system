@@ -3,6 +3,8 @@ using AppointmentSystem.Api.Modules.BusinessModule.Models;
 using AppointmentSystem.Api.Modules.BusinessModule.Enums;
 using AppointmentSystem.Api.Modules.AppointmentModule.Enums;
 using AppointmentSystem.Api.Modules.AppointmentModule.Models;
+using AppointmentSystem.Api.Modules.SubscriptionModule.DTOs;
+using AppointmentSystem.Api.Modules.SubscriptionModule.Services;
 using AppointmentSystem.Api.Shared.Authentication;
 using AppointmentSystem.Api.Shared.Constants;
 using AppointmentSystem.Api.Shared.Database;
@@ -15,11 +17,13 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ICurrentUserService _currentUserService;
+        private readonly ISubscriptionService _subscriptionService;
 
-        public BusinessService(ApplicationDbContext context, ICurrentUserService currentUserService)
+        public BusinessService(ApplicationDbContext context, ICurrentUserService currentUserService, ISubscriptionService subscriptionService)
         {
             _context = context;
             _currentUserService = currentUserService;
+            _subscriptionService = subscriptionService;
         }
 
         private Guid GetBusinessId()
@@ -41,7 +45,8 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
                 throw new NotFoundException(ErrorMessages.BUSINESS_NOT_FOUND);
             }
 
-            return MapToResponse(business);
+            var subscriptionInfo = await _subscriptionService.GetSubscriptionInfoAsync(businessId);
+            return MapToResponse(business, subscriptionInfo);
         }
 
         public async Task UpdateProfileAsync(UpdateBusinessProfileRequest request)
@@ -178,7 +183,7 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
             }
         }
 
-        private BusinessResponseDto MapToResponse(Business business)
+        private BusinessResponseDto MapToResponse(Business business, SubscriptionInfo? sub = null)
         {
             return new BusinessResponseDto
             {
@@ -189,7 +194,7 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
                 OwnerLastName = business.OwnerLastName,
                 Email = business.Email,
                 ContactPhone = business.ContactPhone,
-                EmployeeCapacity = business.EmployeeCapacity,
+                EmployeeCapacity = sub?.MaxEmployees ?? business.EmployeeCapacity,
                 Category = business.Category,
                 City = business.City,
                 District = business.District,
@@ -200,7 +205,8 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
                 WorkingHourEnd = business.WorkingHourEnd,
                 WorkingDays = business.WorkingDays,
                 GalleryUrls = business.GalleryUrls,
-                CreatedAt = business.CreatedAt
+                CreatedAt = business.CreatedAt,
+                Subscription = sub
             };
         }
     }

@@ -1,5 +1,6 @@
 using AppointmentSystem.Api.Modules.OfferingModule.DTOs;
 using AppointmentSystem.Api.Modules.OfferingModule.Models;
+using AppointmentSystem.Api.Modules.SubscriptionModule.Services;
 using AppointmentSystem.Api.Shared.Authentication;
 using AppointmentSystem.Api.Shared.Constants;
 using AppointmentSystem.Api.Shared.Database;
@@ -13,11 +14,13 @@ namespace AppointmentSystem.Api.Modules.OfferingModule.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ICurrentUserService _currentUserService;
+        private readonly ISubscriptionEnforcementService _enforcementService;
 
-        public OfferingService(ApplicationDbContext context, ICurrentUserService currentUserService)
+        public OfferingService(ApplicationDbContext context, ICurrentUserService currentUserService, ISubscriptionEnforcementService enforcementService)
         {
             _context = context;
             _currentUserService = currentUserService;
+            _enforcementService = enforcementService;
         }
 
         private Guid GetBusinessId()
@@ -33,6 +36,8 @@ namespace AppointmentSystem.Api.Modules.OfferingModule.Services
         public async Task<OfferingResponseDto> CreateAsync(CreateOfferingRequest request)
         {
             Guid businessId = GetBusinessId();
+
+            await _enforcementService.EnsureCanAddOfferingAsync(businessId);
 
             Offering offering = new Offering
             {

@@ -47,4 +47,19 @@ public class ErrorMessages
     public const string BRANCH_LIMIT_EXCEEDED = "Şube oluşturma limitine ulaşıldı. Maksimum şube sayısı:";
     public const string EMPLOYEE_NOT_ASSIGNED_TO_OFFERING = "Seçilen personel bu hizmeti vermemektedir.";
     public const string CUSTOMER_BLOCKED_BY_BUSINESS = "Şu an için bu işletmeden randevu alamazsınız.";
+
+    // Import Errors
+    public const string IMPORT_FILE_REQUIRED = "Lütfen bir dosya seçiniz.";
+    public const string IMPORT_INVALID_FORMAT = "Geçersiz dosya formatı. Sadece .csv ve .xlsx desteklenmektedir.";
+    public const string IMPORT_FILE_TOO_LARGE = "Dosya boyutu çok büyük. Maksimum limit: 5MB";
+    public const string IMPORT_TOO_MANY_ROWS = "Dosyada çok fazla satır var. Maksimum limit: 500 satır";
+    public const string IMPORT_USER_NOT_FOUND = "Bu e-posta adresine sahip bir kullanıcı bulunamadı. Çalışan eklemeden önce kullanıcının sisteme kayıt olması gerekir.";
+    public const string IMPORT_ALREADY_EXISTS = "Bu kullanıcı zaten bu işletmede çalışan olarak kayıtlı.";
+    public const string IMPORT_COLUMN_MISSING = "Dosya yapısı hatalı. Gerekli sütunlar eksik: ";
+
+    // Loyalty
+    public const string LOYALTY_PROGRAM_DISABLED = "Bu işletme için sadakat programı aktif değil.";
+    public const string LOYALTY_INSUFFICIENT_POINTS = "Yetersiz sadakat puanı.";
+    public const string LOYALTY_MIN_POINTS_REQUIRED = "Minimum puan bozdurma sınırı:";
+    public const string LOYALTY_MAX_POINTS_EXCEEDED = "Bir randevuda kullanılabilecek maksimum puan sınırı aşıldı.";
 }

@@ -5,6 +5,7 @@ using AppointmentSystem.Api.Modules.AppointmentModule.Models;
 using AppointmentSystem.Api.Modules.BusinessModule.DTOs;
 using AppointmentSystem.Api.Modules.BusinessModule.Models;
 using AppointmentSystem.Api.Shared.Authentication;
+using AppointmentSystem.Api.Modules.SubscriptionModule.Services;
 using AppointmentSystem.Api.Shared.Constants;
 using AppointmentSystem.Api.Shared.Database;
 using AppointmentSystem.Api.Shared.Exceptions;
@@ -19,15 +20,17 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ICurrentUserService _currentUserService;
+        private readonly ISubscriptionEnforcementService _enforcementService;
 
         private const int MAX_EXCEL_ROWS = 10000;
         private const int DEFAULT_DAYS_BACK = 90;
         private const int MAX_YEARS_RANGE = 2;
 
-        public ExportService(ApplicationDbContext context, ICurrentUserService currentUserService)
+        public ExportService(ApplicationDbContext context, ICurrentUserService currentUserService, ISubscriptionEnforcementService enforcementService)
         {
             _context = context;
             _currentUserService = currentUserService;
+            _enforcementService = enforcementService;
         }
 
         private Guid GetBusinessId()
@@ -42,6 +45,8 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
         public async Task<(byte[] Content, string FileName, string ContentType)> ExportAppointmentsAsync(ExportAppointmentsRequest request)
         {
             Guid businessId = GetBusinessId();
+            await _enforcementService.EnsureFeatureEnabledAsync(businessId, "Export");
+            
             Business? business = await _context.Businesses.FindAsync(businessId);
             if (business == null) throw new NotFoundException(ErrorMessages.BUSINESS_NOT_FOUND);
 
@@ -108,6 +113,8 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
         public async Task<(byte[] Content, string FileName, string ContentType)> ExportCustomersAsync(ExportCustomersRequest request)
         {
             Guid businessId = GetBusinessId();
+            await _enforcementService.EnsureFeatureEnabledAsync(businessId, "Export");
+
             Business? business = await _context.Businesses.FindAsync(businessId);
             if (business == null) throw new NotFoundException(ErrorMessages.BUSINESS_NOT_FOUND);
 

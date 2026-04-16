@@ -37,5 +37,16 @@ namespace AppointmentSystem.Api.Shared.Caching
         {
             await _distributedCache.RemoveAsync(key);
         }
+
+        public async Task RemoveByPrefixAsync(string prefix)
+        {
+            // IDistributedCache prefix bazlı silmeyi desteklemez. 
+            // Bu yüzden versiyonlama (versioning) sistemini kullanıyoruz.
+            // Eğer prefix 'catalog:' ise, versiyon anahtarını siliyoruz/güncelliyoruz.
+            if (prefix.StartsWith("catalog"))
+            {
+                await _distributedCache.RemoveAsync("catalog:version");
+            }
+        }
     }
 }

@@ -79,5 +79,9 @@ namespace AppointmentSystem.Api.Shared.Constants
         public const string DELETED_FIRST_NAME = "Deleted";
         public const string DELETED_LAST_NAME = "Account";
         public const int ACCOUNT_DELETE_RATE_LIMIT_HOURS = 24;
+
+        // Import
+        public const int MAX_IMPORT_ROWS = 500;
+        public const int MAX_IMPORT_FILE_SIZE_MB = 5;
     }
 }

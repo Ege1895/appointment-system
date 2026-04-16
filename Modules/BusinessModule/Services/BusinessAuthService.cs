@@ -1,6 +1,7 @@
 using AppointmentSystem.Api.Modules.BusinessModule.DTOs;
 using AppointmentSystem.Api.Modules.BusinessModule.Models;
 using AppointmentSystem.Api.Modules.BusinessModule.Enums;
+using AppointmentSystem.Api.Modules.SubscriptionModule.Services;
 using AppointmentSystem.Api.Shared.Authentication;
 using AppointmentSystem.Api.Shared.Constants;
 using AppointmentSystem.Api.Shared.Database;
@@ -21,6 +22,7 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
         private readonly JwtTokenGenerator _jwtTokenGenerator;
         private readonly JwtSettings _jwtSettings;
         private readonly IEmailService _emailService;
+        private readonly ISubscriptionService _subscriptionService;
         private readonly ILogger<BusinessAuthService> _logger;
 
         public BusinessAuthService(
@@ -28,12 +30,14 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
             JwtTokenGenerator jwtTokenGenerator,
             IOptions<JwtSettings> jwtOptions,
             IEmailService emailService,
+            ISubscriptionService subscriptionService,
             ILogger<BusinessAuthService> logger)
         {
             _context = context;
             _jwtTokenGenerator = jwtTokenGenerator;
             _jwtSettings = jwtOptions.Value;
             _emailService = emailService;
+            _subscriptionService = subscriptionService;
             _logger = logger;
         }
 
@@ -98,6 +102,9 @@ namespace AppointmentSystem.Api.Modules.BusinessModule.Services
                 await _context.Businesses.AddAsync(business);
                 _logger.LogDebug("Saving business to database. BusinessId: {BusinessId}", businessId);
                 await _context.SaveChangesAsync();
+
+                // Assign default subscription pack
+                await _subscriptionService.GetOrAssignDefaultAsync(businessId);
 
                 await transaction.CommitAsync();
 
