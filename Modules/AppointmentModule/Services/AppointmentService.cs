@@ -8,6 +8,7 @@ using AppointmentSystem.Api.Shared.Constants;
 using AppointmentSystem.Api.Shared.Database;
 using AppointmentSystem.Api.Shared.Exceptions;
 using AppointmentSystem.Api.Modules.BusinessModule.Services;
+using AppointmentSystem.Api.Modules.CampaignModule.Services;
 using AppointmentSystem.Api.Shared.Notifications;
 using AppointmentSystem.Api.Shared.Notifications.Templates;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +22,7 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
         private readonly ApplicationDbContext _context;
         private readonly ICurrentUserService _currentUserService;
         private readonly IBusinessCustomerService _businessCustomerService;
+        private readonly ILoyaltyService _loyaltyService;
         private readonly IEmailService _emailService;
         private readonly ILogger<AppointmentService> _logger;
 
@@ -28,12 +30,14 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
             ApplicationDbContext context,
             ICurrentUserService currentUserService,
             IBusinessCustomerService businessCustomerService,
+            ILoyaltyService loyaltyService,
             IEmailService emailService,
             ILogger<AppointmentService> logger)
         {
             _context = context;
             _currentUserService = currentUserService;
             _businessCustomerService = businessCustomerService;
+            _loyaltyService = loyaltyService;
             _emailService = emailService;
             _logger = logger;
         }
@@ -132,8 +136,30 @@ namespace AppointmentSystem.Api.Modules.AppointmentModule.Services
                     StartTimeUtc = request.StartTimeUtc,
                     EndTimeUtc = endTimeUtc,
                     Status = AppointmentStatus.PendingApproval,
-                    ActionTimeoutUtc = DateTime.UtcNow.AddHours(BusinessRules.ACTION_TIMEOUT_HOURS)
+                    ActionTimeoutUtc = DateTime.UtcNow.AddHours(BusinessRules.ACTION_TIMEOUT_HOURS),
+                    PriceAtBooking = offering.Price
                 };
+
+                // Loyalty Points Redemption
+                if (request.LoyaltyPointsToRedeem.HasValue && request.LoyaltyPointsToRedeem.Value > 0)
+                {
+                    decimal discount = await _loyaltyService.CalculateRedemptionDiscountAsync(request.BusinessId, userId, request.LoyaltyPointsToRedeem.Value);
+                    
+                    // Cap discount by offering price
+                    if (offering.Price.HasValue && discount > offering.Price.Value)
+                    {
+                        discount = offering.Price.Value;
+                    }
+
+                    appointment.DiscountApplied = discount;
+                    appointment.FinalPrice = (offering.Price ?? 0) - discount;
+
+                    await _loyaltyService.ConsumePointsAsync(request.BusinessId, userId, appointment.Id, request.LoyaltyPointsToRedeem.Value);
+                }
+                else
+                {
+                    appointment.FinalPrice = offering.Price;
+                }
 
                 await _context.Appointments.AddAsync(appointment);
                 await _context.SaveChangesAsync();

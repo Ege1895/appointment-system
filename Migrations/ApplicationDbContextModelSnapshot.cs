@@ -44,11 +44,17 @@ namespace AppointmentSystem.Api.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
 
+                    b.Property<decimal?>("DiscountApplied")
+                        .HasColumnType("numeric");
+
                     b.Property<Guid>("EmployeeId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("EndTimeUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("FinalPrice")
+                        .HasColumnType("numeric");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
@@ -577,6 +583,338 @@ namespace AppointmentSystem.Api.Migrations
                     b.ToTable("BusinessCustomerEmailLogs");
                 });
 
+            modelBuilder.Entity("AppointmentSystem.Api.Modules.BusinessModule.Models.BusinessKnownCustomer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BusinessId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("RowVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BusinessId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("BusinessKnownCustomers");
+                });
+
+            modelBuilder.Entity("AppointmentSystem.Api.Modules.BusinessModule.Models.PendingCustomerInvitation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BusinessId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("InvitedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsAccepted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("RowVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BusinessId");
+
+                    b.ToTable("PendingCustomerInvitations");
+                });
+
+            modelBuilder.Entity("AppointmentSystem.Api.Modules.CampaignModule.Models.Campaign", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ApplicableTo")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("BusinessId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<int>("CurrentUses")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("DiscountType")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("DiscountValue")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal?>("MaxDiscountAmount")
+                        .HasColumnType("numeric");
+
+                    b.Property<int?>("MaxUses")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("MinBookingPrice")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.PrimitiveCollection<List<Guid>>("OfferingIds")
+                        .HasColumnType("uuid[]");
+
+                    b.Property<Guid>("RowVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("StartsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BusinessId");
+
+                    b.ToTable("Campaigns");
+                });
+
+            modelBuilder.Entity("AppointmentSystem.Api.Modules.CampaignModule.Models.LoyaltyProgram", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BusinessId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("ExpiryDays")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("MaxPointsRedemptionPerBooking")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MinPointsToRedeem")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PointsPerAppointment")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("PointsPerCurrencyUnit")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<decimal>("RedemptionRate")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<Guid>("RowVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BusinessId")
+                        .IsUnique();
+
+                    b.ToTable("LoyaltyPrograms", (string)null);
+                });
+
+            modelBuilder.Entity("AppointmentSystem.Api.Modules.CampaignModule.Models.LoyaltyTransaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AppointmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("BalanceAfter")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("BusinessId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BusinessId", "UserId", "CreatedAt");
+
+                    b.ToTable("LoyaltyTransactions", (string)null);
+                });
+
+            modelBuilder.Entity("AppointmentSystem.Api.Modules.CampaignModule.Models.UserLoyaltyPoints", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BusinessId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<int>("CurrentPoints")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastEarnedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RowVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("TotalEarned")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TotalRedeemed")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("BusinessId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("UserLoyaltyPoints", (string)null);
+                });
+
             modelBuilder.Entity("AppointmentSystem.Api.Modules.EmployeeModule.Models.Employee", b =>
                 {
                     b.Property<Guid>("Id")
@@ -818,6 +1156,283 @@ namespace AppointmentSystem.Api.Migrations
                     b.HasIndex("BusinessId");
 
                     b.ToTable("Offerings", (string)null);
+                });
+
+            modelBuilder.Entity("AppointmentSystem.Api.Modules.PromotionModule.Models.BoostPackage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("BoostScore")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<int>("DurationDays")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid>("RowVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BoostPackages");
+                });
+
+            modelBuilder.Entity("AppointmentSystem.Api.Modules.PromotionModule.Models.BusinessBoost", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BoostPackageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BusinessId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("PaymentReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("RowVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("StartsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BoostPackageId");
+
+                    b.ToTable("BusinessBoosts");
+                });
+
+            modelBuilder.Entity("AppointmentSystem.Api.Modules.SubscriptionModule.Models.BusinessSubscription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("BillingCycle")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("BusinessId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("PackageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RowVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BusinessId")
+                        .IsUnique();
+
+                    b.HasIndex("PackageId");
+
+                    b.ToTable("BusinessSubscriptions");
+                });
+
+            modelBuilder.Entity("AppointmentSystem.Api.Modules.SubscriptionModule.Models.SubscriptionChangeRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("BillingCycle")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("BusinessId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ConfirmedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("FromPackageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("PaymentReference")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RowVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ToPackageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BusinessId");
+
+                    b.HasIndex("FromPackageId");
+
+                    b.HasIndex("ToPackageId");
+
+                    b.ToTable("SubscriptionChangeRequests");
+                });
+
+            modelBuilder.Entity("AppointmentSystem.Api.Modules.SubscriptionModule.Models.SubscriptionPackage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("AnalyticsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("CampaignsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("ExportEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsPublic")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("LoyaltyEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("MaxBranches")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaxEmployees")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaxMonthlyAppointments")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaxOfferings")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("PriceMonthly")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal?>("PriceYearly")
+                        .HasColumnType("numeric");
+
+                    b.Property<bool>("PromotionEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SubscriptionPackages");
                 });
 
             modelBuilder.Entity("AppointmentSystem.Api.Modules.UserModule.Models.User", b =>
@@ -1146,6 +1761,77 @@ namespace AppointmentSystem.Api.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("AppointmentSystem.Api.Modules.BusinessModule.Models.BusinessKnownCustomer", b =>
+                {
+                    b.HasOne("AppointmentSystem.Api.Modules.BusinessModule.Models.Business", "Business")
+                        .WithMany()
+                        .HasForeignKey("BusinessId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AppointmentSystem.Api.Modules.UserModule.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Business");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("AppointmentSystem.Api.Modules.BusinessModule.Models.PendingCustomerInvitation", b =>
+                {
+                    b.HasOne("AppointmentSystem.Api.Modules.BusinessModule.Models.Business", "Business")
+                        .WithMany()
+                        .HasForeignKey("BusinessId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Business");
+                });
+
+            modelBuilder.Entity("AppointmentSystem.Api.Modules.CampaignModule.Models.Campaign", b =>
+                {
+                    b.HasOne("AppointmentSystem.Api.Modules.BusinessModule.Models.Business", "Business")
+                        .WithMany()
+                        .HasForeignKey("BusinessId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Business");
+                });
+
+            modelBuilder.Entity("AppointmentSystem.Api.Modules.CampaignModule.Models.LoyaltyProgram", b =>
+                {
+                    b.HasOne("AppointmentSystem.Api.Modules.BusinessModule.Models.Business", "Business")
+                        .WithMany()
+                        .HasForeignKey("BusinessId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Business");
+                });
+
+            modelBuilder.Entity("AppointmentSystem.Api.Modules.CampaignModule.Models.UserLoyaltyPoints", b =>
+                {
+                    b.HasOne("AppointmentSystem.Api.Modules.BusinessModule.Models.Business", "Business")
+                        .WithMany()
+                        .HasForeignKey("BusinessId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AppointmentSystem.Api.Modules.UserModule.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Business");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("AppointmentSystem.Api.Modules.EmployeeModule.Models.Employee", b =>
                 {
                     b.HasOne("AppointmentSystem.Api.Modules.BranchModule.Models.Branch", "Branch")
@@ -1218,6 +1904,61 @@ namespace AppointmentSystem.Api.Migrations
                     b.Navigation("Business");
                 });
 
+            modelBuilder.Entity("AppointmentSystem.Api.Modules.PromotionModule.Models.BusinessBoost", b =>
+                {
+                    b.HasOne("AppointmentSystem.Api.Modules.PromotionModule.Models.BoostPackage", "Package")
+                        .WithMany()
+                        .HasForeignKey("BoostPackageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Package");
+                });
+
+            modelBuilder.Entity("AppointmentSystem.Api.Modules.SubscriptionModule.Models.BusinessSubscription", b =>
+                {
+                    b.HasOne("AppointmentSystem.Api.Modules.BusinessModule.Models.Business", "Business")
+                        .WithOne("Subscription")
+                        .HasForeignKey("AppointmentSystem.Api.Modules.SubscriptionModule.Models.BusinessSubscription", "BusinessId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AppointmentSystem.Api.Modules.SubscriptionModule.Models.SubscriptionPackage", "Package")
+                        .WithMany()
+                        .HasForeignKey("PackageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Business");
+
+                    b.Navigation("Package");
+                });
+
+            modelBuilder.Entity("AppointmentSystem.Api.Modules.SubscriptionModule.Models.SubscriptionChangeRequest", b =>
+                {
+                    b.HasOne("AppointmentSystem.Api.Modules.BusinessModule.Models.Business", "Business")
+                        .WithMany()
+                        .HasForeignKey("BusinessId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AppointmentSystem.Api.Modules.SubscriptionModule.Models.SubscriptionPackage", "FromPackage")
+                        .WithMany()
+                        .HasForeignKey("FromPackageId");
+
+                    b.HasOne("AppointmentSystem.Api.Modules.SubscriptionModule.Models.SubscriptionPackage", "ToPackage")
+                        .WithMany()
+                        .HasForeignKey("ToPackageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Business");
+
+                    b.Navigation("FromPackage");
+
+                    b.Navigation("ToPackage");
+                });
+
             modelBuilder.Entity("AppointmentSystem.Api.Modules.WorkingHourModule.Models.EmployeeWorkingHour", b =>
                 {
                     b.HasOne("AppointmentSystem.Api.Modules.BusinessModule.Models.Business", "Business")
@@ -1235,6 +1976,11 @@ namespace AppointmentSystem.Api.Migrations
                     b.Navigation("Business");
 
                     b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("AppointmentSystem.Api.Modules.BusinessModule.Models.Business", b =>
+                {
+                    b.Navigation("Subscription");
                 });
 #pragma warning restore 612, 618
         }

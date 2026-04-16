@@ -7,6 +7,9 @@ using AppointmentSystem.Api.Modules.WorkingHourModule.Models;
 using AppointmentSystem.Api.Modules.AppointmentModule.Models;
 using AppointmentSystem.Api.Modules.FeedbackModule.Models;
 using AppointmentSystem.Api.Modules.BranchModule.Models;
+using AppointmentSystem.Api.Modules.CampaignModule.Models;
+using AppointmentSystem.Api.Modules.SubscriptionModule.Models;
+using AppointmentSystem.Api.Modules.PromotionModule.Models;
 using Microsoft.EntityFrameworkCore;
 
 using AppointmentSystem.Api.Shared.Authentication;
@@ -39,6 +42,17 @@ namespace AppointmentSystem.Api.Shared.Database
         public DbSet<BusinessCustomerBlock> BusinessCustomerBlocks { get; set; }
         public DbSet<BusinessCustomerEmailLog> BusinessCustomerEmailLogs { get; set; }
         public DbSet<EmailVerification> EmailVerifications { get; set; }
+        public DbSet<BusinessKnownCustomer> BusinessKnownCustomers { get; set; }
+        public DbSet<PendingCustomerInvitation> PendingCustomerInvitations { get; set; }
+        public DbSet<LoyaltyProgram> LoyaltyPrograms { get; set; }
+        public DbSet<UserLoyaltyPoints> UserLoyaltyPoints { get; set; }
+        public DbSet<LoyaltyTransaction> LoyaltyTransactions { get; set; }
+        public DbSet<SubscriptionPackage> SubscriptionPackages { get; set; }
+        public DbSet<BusinessSubscription> BusinessSubscriptions { get; set; }
+        public DbSet<SubscriptionChangeRequest> SubscriptionChangeRequests { get; set; }
+        public DbSet<BoostPackage> BoostPackages { get; set; }
+        public DbSet<BusinessBoost> BusinessBoosts { get; set; }
+        public DbSet<Campaign> Campaigns { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -81,6 +95,35 @@ namespace AppointmentSystem.Api.Shared.Database
 
             modelBuilder.Entity<BusinessCustomerEmailLog>().HasQueryFilter(l => !l.IsDeleted && 
                 (!_currentUserService.TenantId.HasValue || l.BusinessId == _currentUserService.TenantId.Value));
+
+            modelBuilder.Entity<BusinessKnownCustomer>().HasQueryFilter(c => !c.IsDeleted && 
+                (!_currentUserService.TenantId.HasValue || c.BusinessId == _currentUserService.TenantId.Value));
+
+            modelBuilder.Entity<PendingCustomerInvitation>().HasQueryFilter(i => !i.IsDeleted && 
+                (!_currentUserService.TenantId.HasValue || i.BusinessId == _currentUserService.TenantId.Value));
+
+            modelBuilder.Entity<LoyaltyProgram>().HasQueryFilter(lp => !lp.IsDeleted && 
+                (!_currentUserService.TenantId.HasValue || lp.BusinessId == _currentUserService.TenantId.Value));
+
+            modelBuilder.Entity<UserLoyaltyPoints>().HasQueryFilter(ulp => !ulp.IsDeleted && 
+                (!_currentUserService.TenantId.HasValue || ulp.BusinessId == _currentUserService.TenantId.Value));
+
+            modelBuilder.Entity<LoyaltyTransaction>().HasQueryFilter(lt => 
+                (!_currentUserService.TenantId.HasValue || lt.BusinessId == _currentUserService.TenantId.Value));
+
+            modelBuilder.Entity<BusinessSubscription>().HasQueryFilter(bs => bs.IsActive && 
+                (!_currentUserService.TenantId.HasValue || bs.BusinessId == _currentUserService.TenantId.Value));
+            
+            modelBuilder.Entity<SubscriptionChangeRequest>().HasQueryFilter(scr => 
+                (!_currentUserService.TenantId.HasValue || scr.BusinessId == _currentUserService.TenantId.Value));
+            
+            modelBuilder.Entity<Campaign>().HasQueryFilter(c => !c.IsDeleted && 
+                (!_currentUserService.TenantId.HasValue || c.BusinessId == _currentUserService.TenantId.Value));
+
+            modelBuilder.Entity<BusinessBoost>().HasQueryFilter(bb => bb.IsActive && !bb.IsDeleted &&
+                (!_currentUserService.TenantId.HasValue || bb.BusinessId == _currentUserService.TenantId.Value));
+
+            modelBuilder.Entity<BoostPackage>().HasQueryFilter(bp => bp.IsActive && !bp.IsDeleted);
         }
     }
 }
