@@ -33,4 +33,4 @@ customer_token.json
 ## [Logs / DB]
 *.log
 *.db
-build_errors.txt
+build_errors*.txt
